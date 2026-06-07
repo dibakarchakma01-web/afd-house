@@ -1,0 +1,262 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with personal and security settings",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The Firebase login user ID" },
+        "name": { "type": "string", "description": "Display name of the user" },
+        "email": { "type": "string", "description": "User email address" },
+        "photoURL": { "type": "string", "description": "Avatar URL" },
+        "role": { "type": "string", "enum": ["customer", "admin"], "description": "User role standard" },
+        "phoneNumber": { "type": "string", "description": "Phone number" },
+        "shippingAddress": { "type": "string", "description": "Saved shipping address" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of account creation" }
+      },
+      "required": ["uid", "name", "email", "role", "createdAt"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "E-commerce product inside the ZunoMart inventory",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Product ID" },
+        "name": { "type": "string", "description": "Product title name" },
+        "slug": { "type": "string", "description": "Unique product friendly slug" },
+        "description": { "type": "string", "description": "Full product details" },
+        "shortDescription": { "type": "string", "description": "Brief description of the product" },
+        "price": { "type": "number", "description": "Original product price" },
+        "salePrice": { "type": "number", "description": "Discounted price or flash sale price" },
+        "discountPrice": { "type": "number", "description": "Amount or final value of discount" },
+        "stock": { "type": "number", "description": "Quantity in inventory" },
+        "category": { "type": "string", "description": "Category Slug" },
+        "brand": { "type": "string", "description": "Brand identifier of the product" },
+        "sku": { "type": "string", "description": "Unique inventory keeping unit reference" },
+        "images": { "type": "array", "description": "URLs of product images" },
+        "thumbnail": { "type": "string", "description": "Main product thumbnail image URL" },
+        "rating": { "type": "number", "description": "Average review rating" },
+        "reviewsCount": { "type": "number", "description": "Total number of reviews submitted" },
+        "tags": { "type": "array", "description": "Sub-criteria indexing tags for the product" },
+        "status": { "type": "string", "enum": ["active", "inactive"], "description": "Catalog display status" },
+        "isFeatured": { "type": "boolean", "description": "Display in featured block" },
+        "isNewArrival": { "type": "boolean", "description": "Display in new arrivals section" },
+        "isBestSeller": { "type": "boolean", "description": "Best seller badge trigger" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Modification timestamp" },
+        "vendorId": { "type": "string", "description": "Multi-vendor track ID" }
+      },
+      "required": ["name", "slug", "price", "stock", "category", "brand", "sku", "thumbnail", "status", "createdAt", "updatedAt"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Product categorization metadata",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Category ID" },
+        "name": { "type": "string", "description": "Display name of category" },
+        "slug": { "type": "string", "description": "URL friendly unique slug" },
+        "image": { "type": "string", "description": "Category thumbnail URL" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["name", "slug", "image", "createdAt"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Completed transaction details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Order unique transaction identifier" },
+        "userId": { "type": "string", "description": "The buying client user ID" },
+        "customerName": { "type": "string", "description": "Name of the buyer" },
+        "customerEmail": { "type": "string", "description": "Email address of the buyer" },
+        "products": { "type": "array", "description": "List of purchase items containing name, price, qty, etc." },
+        "total": { "type": "number", "description": "Subtotal cost of products" },
+        "discount": { "type": "number", "description": "Discount applied via coupons" },
+        "finalTotal": { "type": "number", "description": "Subtotal minus discount" },
+        "couponCode": { "type": "string", "description": "Applied discount coupon code" },
+        "paymentMethod": { "type": "string", "description": "bKash, Nagad, SSLCommerz, Stripe" },
+        "paymentStatus": { "type": "string", "enum": ["Paid", "Pending", "Failed"], "description": "Payment authorization state" },
+        "status": { "type": "string", "enum": ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"], "description": "Current dispatch status" },
+        "shippingAddress": { "type": "string", "description": "Recipient full address" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Transaction creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update state timestamp" }
+      },
+      "required": ["userId", "products", "total", "finalTotal", "status", "paymentMethod", "paymentStatus", "createdAt"]
+    },
+    "Coupon": {
+      "title": "Coupon",
+      "description": "Store discount and promotion certificates",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string", "description": "Promotional coupon code" },
+        "discountType": { "type": "string", "enum": ["percentage", "fixed"], "description": "Discount calculation type" },
+        "discountValue": { "type": "number", "description": "Numerical value to subtract or apply percentage" },
+        "expiryDate": { "type": "string", "format": "date", "description": "Expiry calendar date" },
+        "isActive": { "type": "boolean", "description": "Active state switch" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["code", "discountType", "discountValue", "isActive", "createdAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Star rating and text customer reviews",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Review unique identifier" },
+        "productId": { "type": "string", "description": "Reference product ID" },
+        "userId": { "type": "string", "description": "Submitting user ID" },
+        "userName": { "type": "string", "description": "Name of reviewer" },
+        "rating": { "type": "number", "description": "1 to 5 star rating" },
+        "comment": { "type": "string", "description": "Review details text description" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["productId", "userId", "userName", "rating", "comment", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "In-app and system message alerts for users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique notification identifier" },
+        "userId": { "type": "string", "description": "Target user ID receiving notification" },
+        "title": { "type": "string", "description": "Message title" },
+        "message": { "type": "string", "description": "Text descriptive body of notification" },
+        "isRead": { "type": "boolean", "description": "Status marker" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp message was sent" }
+      },
+      "required": ["userId", "title", "message", "isRead", "createdAt"]
+    },
+    "ChatThread": {
+      "title": "ChatThread",
+      "description": "Threads mapping user support conversations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Thread mapping userId" },
+        "userId": { "type": "string", "description": "User launching chat" },
+        "userName": { "type": "string", "description": "User name" },
+        "lastMessage": { "type": "string", "description": "Most recent reply summary" },
+        "lastMessageAt": { "type": "string", "format": "date-time", "description": "Last response timestamp" },
+        "status": { "type": "string", "enum": ["open", "closed"], "description": "Thread activity state" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Thread launch timestamp" }
+      },
+      "required": ["userId", "userName", "status", "createdAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Individual chat message replies in real-time threads",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string", "description": "User ID of the responder" },
+        "senderName": { "type": "string", "description": "Sender display name" },
+        "senderRole": { "type": "string", "enum": ["customer", "admin"], "description": "Sender privilege context" },
+        "message": { "type": "string", "description": "Written response content text" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Message sending timestamp" }
+      },
+      "required": ["senderId", "senderName", "senderRole", "message", "createdAt"]
+    },
+    "AdminDoc": {
+      "title": "AdminDoc",
+      "description": "Authoritative database records mapping admin authority",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "User ID with admin rights" },
+        "email": { "type": "string", "description": "Authorized email" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Privilege assignment timestamp" }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "Brand": {
+      "title": "Brand",
+      "description": "Corporate brand entity providing authenticity tags to products",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique brand identifier" },
+        "name": { "type": "string", "description": "Brand brand name" },
+        "slug": { "type": "string", "description": "Friendly slug identifier" },
+        "logo": { "type": "string", "description": "Corporate emblem logo URL" }
+      },
+      "required": ["id", "name", "slug"]
+    },
+    "WishlistItem": {
+      "title": "WishlistItem",
+      "description": "User-specific flagged references for products catalog",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique mapping id: user_product" },
+        "userId": { "type": "string", "description": "Owner client ID" },
+        "productId": { "type": "string", "description": "Referenced product catalog item ID" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["id", "userId", "productId", "createdAt"]
+    },
+    "CartItemDoc": {
+      "title": "CartItemDoc",
+      "description": "User shopping cart item records stored in Firebase",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier: user_productId" },
+        "userId": { "type": "string", "description": "The customer user ID" },
+        "productId": { "type": "string", "description": "The added product catalog ID" },
+        "quantity": { "type": "number", "description": "Items quantity added" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["id", "userId", "productId", "quantity", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": "User",
+      "description": "User profile metadata storage searchable by profile UID"
+    },
+    "products": {
+      "schema": "Product",
+      "description": "Main e-commerce product listings"
+    },
+    "categories": {
+      "schema": "Category",
+      "description": "Catalog division directories"
+    },
+    "brands": {
+      "schema": "Brand",
+      "description": "Database definitions of supported store brands"
+    },
+    "wishlist": {
+      "schema": "WishlistItem",
+      "description": "Document lists containing users persistent wishlist item products mapping"
+    },
+    "cart": {
+      "schema": "CartItemDoc",
+      "description": "User shopping cart items stored persistently"
+    },
+    "orders": {
+      "schema": "Order",
+      "description": "Recorded customer order entries"
+    },
+    "coupons": {
+      "schema": "Coupon",
+      "description": "Promotion vouchers"
+    },
+    "reviews": {
+      "schema": "Review",
+      "description": "User product ratings and textual feedback"
+    },
+    "notifications": {
+      "schema": "Notification",
+      "description": "Standard alert events generated for customers"
+    },
+    "chats": {
+      "schema": "ChatThread",
+      "description": "Customer live-support chat threads and trackers"
+    },
+    "chats/{chatId}/messages": {
+      "schema": "ChatMessage",
+      "description": "Individual instant messaging rows inside client threads"
+    },
+    "admins": {
+      "schema": "AdminDoc",
+      "description": "Authorized users who possess administrative clearance"
+    }
+  }
+}

@@ -1,0 +1,507 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { Search, ShoppingCart, Heart, User, Sun, Moon, LogOut, ShieldAlert, ChevronDown, Menu, X, Tag, Flame, Headphones, Truck } from 'lucide-react';
+import { Product, Category } from '../types';
+
+interface NavbarProps {
+  currentView: string;
+  setView: (view: string) => void;
+  setSelectedProductId: (id: string | null) => void;
+  cartCount: number;
+  wishlistCount: number;
+  user: any;
+  isAdminUser: boolean;
+  onLogout: () => void;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
+  products: Product[];
+  categories: Category[];
+  activeCategory: string;
+  setActiveCategory: (cat: string) => void;
+  setSearchQuery: (query: string) => void;
+}
+
+export default function Navbar({
+  currentView,
+  setView,
+  setSelectedProductId,
+  cartCount,
+  wishlistCount,
+  user,
+  isAdminUser,
+  onLogout,
+  theme,
+  toggleTheme,
+  products,
+  categories,
+  activeCategory,
+  setActiveCategory,
+  setSearchQuery,
+}: NavbarProps) {
+  const [localSearch, setLocalSearch] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Filter recommendations based on search text input
+  const suggestions = localSearch.trim()
+    ? products
+        .filter((p) => {
+          const matchesName = p.name.toLowerCase().includes(localSearch.toLowerCase());
+          const matchesCategory = activeCategory === 'all' || p.category === activeCategory;
+          return matchesName && matchesCategory;
+        })
+        .slice(0, 5)
+    : [];
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchQuery(localSearch);
+    setView('listing');
+    setShowSuggestions(false);
+  };
+
+  const handleSuggestionClick = (productId: string) => {
+    setSelectedProductId(productId);
+    setView('detail');
+    setShowSuggestions(false);
+    setLocalSearch('');
+  };
+
+  return (
+    <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-100 transition-colors duration-200">
+      {/* Top Flash Sale Bar */}
+      <div className="bg-brand-green-dark px-4 py-1.5 text-white flex items-center justify-between text-[11px] font-medium max-w-7xl mx-auto lg:px-8">
+        <div className="flex items-center gap-2">
+          <Flame className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
+          <span>FLASH SALE: Extra 30% OFF on all brand apparel! Use Coupon: <span className="font-bold">ZUNO30</span></span>
+        </div>
+        <div className="hidden sm:flex items-center gap-5 opacity-90">
+          <button onClick={() => setView('tracking')} className="hover:text-orange-400 flex items-center gap-1">
+            <Tag className="w-3 h-3" /> Track Order
+          </button>
+          <button className="hover:text-orange-400 flex items-center gap-1">
+            <Headphones className="w-3 h-3" /> Help Center
+          </button>
+          <button className="hover:text-orange-400">Sell on AFD HOUSE</button>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex items-center justify-between gap-8">
+          
+          {/* Hamburger Menu & Logo */}
+          <div className="flex items-center gap-3 shrink-0">
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 md:hidden text-gray-600 hover:text-brand-green transition-colors"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+            <button
+              onClick={() => {
+                setActiveCategory('all');
+                setSearchQuery('');
+                setView('home');
+              }}
+              className="flex items-center gap-2"
+            >
+              <div className="relative">
+                <ShoppingCart className="w-9 h-9 text-brand-green fill-brand-green" />
+                <span className="absolute inset-0 flex items-center justify-center text-white font-black text-lg mb-0.5">A</span>
+              </div>
+              <div className="flex flex-col items-start leading-tight">
+                <span className="font-sans font-black text-xl sm:text-2xl tracking-tighter text-black">
+                  AFD <span className="text-brand-green">HOUSE</span>
+                </span>
+                <span className="hidden sm:block text-[10px] text-gray-700 font-bold uppercase tracking-wider">Shop More, Pay Less</span>
+              </div>
+            </button>
+          </div>
+
+          {/* Integrated Search Bar with Dropdown */}
+          <div ref={searchRef} className="hidden md:flex flex-1 relative max-w-2xl">
+            <form onSubmit={handleSearchSubmit} className="flex w-full items-center border-2 border-brand-green rounded-xl overflow-hidden shadow-sm">
+              <input
+                type="text"
+                placeholder="Search over 10,000+ products, brands..."
+                value={localSearch}
+                onChange={(e) => {
+                  setLocalSearch(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                className="flex-1 px-4 py-2 text-gray-900 text-sm focus:outline-none"
+              />
+              <div className="h-6 w-px bg-gray-200 mx-2" />
+              <select 
+                className="bg-transparent text-xs font-bold text-black px-3 py-2 focus:outline-none cursor-pointer border-none"
+                value={activeCategory}
+                onChange={(e) => setActiveCategory(e.target.value)}
+              >
+                <option value="all">All Categories</option>
+                {categories.map(c => (
+                  <option key={c.id} value={c.slug}>{c.name}</option>
+                ))}
+              </select>
+              <button
+                type="submit"
+                className="bg-brand-green hover:bg-brand-green-dark text-white px-6 py-2 transition-all duration-200 flex items-center gap-2 font-bold shadow-sm"
+              >
+                <Search className="w-4 h-4" />
+                <span>Search</span>
+              </button>
+            </form>
+
+            {/* Recommendations Dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-gray-100 rounded-xl shadow-2xl z-50 overflow-hidden divide-y divide-gray-100">
+                {suggestions.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => handleSuggestionClick(p.id)}
+                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 text-left transition-colors"
+                  >
+                    <img
+                      referrerPolicy="no-referrer"
+                      src={p.images[0]}
+                      alt={p.name}
+                      className="w-10 h-10 object-cover rounded-md border border-gray-100"
+                    />
+                    <div className="flex-1 overflow-hidden">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
+                      <p className="text-[10px] text-gray-400 capitalize">{p.category.replace(/-/g, ' ')}</p>
+                    </div>
+                    <span className="text-sm font-bold text-brand-green">৳{p.salePrice || p.price}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Action Icons Panel */}
+          <div className="flex items-center gap-4 shrink-0">
+            {/* Wishlist */}
+            <button
+              onClick={() => setView('wishlist')}
+              className="flex flex-col items-center gap-0.5 text-black font-extrabold hover:text-brand-green transition-colors"
+            >
+              <div className="relative">
+                <Heart className="w-5 h-5 sm:w-6 sm:h-6" />
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-brand-green text-white text-[9px] sm:text-[10px] font-bold w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center">
+                    {wishlistCount}
+                  </span>
+                )}
+              </div>
+              <span className="hidden sm:block text-[11px] font-bold">Wishlist</span>
+            </button>
+
+            {/* Cart */}
+            <button
+              onClick={() => setView('cart')}
+              className="flex flex-col items-center gap-0.5 text-black font-extrabold hover:text-brand-green transition-colors"
+            >
+              <div className="relative">
+                <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-brand-green text-white text-[9px] sm:text-[10px] font-bold w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </div>
+              <span className="hidden sm:block text-[11px] font-bold">Cart</span>
+            </button>
+
+            {/* Account */}
+            <div className="relative group">
+              <button
+                onClick={() => user ? setUserDropdownOpen(!userDropdownOpen) : setView('auth')}
+                className="flex items-center gap-2 group text-black font-extrabold hover:text-brand-green transition-colors"
+              >
+                <div className="p-2 border border-gray-200 rounded-full group-hover:border-brand-green transition-colors">
+                  <User className="w-5 h-5" />
+                </div>
+                <div className="hidden lg:flex flex-col items-start leading-tight">
+                  <span className="text-[10px] text-gray-800 font-black uppercase transition-colors">Hello, {user ? 'Sign in' : 'Sign in'}</span>
+                  <div className="flex items-center gap-0.5">
+                    <span className="text-[11px] font-black uppercase">My Account</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </div>
+                </div>
+              </button>
+
+              {user && userDropdownOpen && (
+                <div className="absolute right-0 mt-3 w-56 rounded-xl bg-white border border-gray-100 shadow-2xl z-50 overflow-hidden divide-y divide-gray-50">
+                  <div className="px-4 py-3 bg-gray-50/50">
+                    <p className="text-xs text-gray-400">Signed In As</p>
+                    <p className="text-sm font-bold text-gray-900 truncate">{user.displayName || 'Customer'}</p>
+                  </div>
+                  <div className="py-1">
+                    <button onClick={() => { setView('profile'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 font-medium">
+                      <User className="w-4 h-4 text-gray-400" /> My Profile
+                    </button>
+                    {isAdminUser && (
+                      <button onClick={() => { setView('admin'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-brand-green hover:bg-gray-50 flex items-center gap-2 font-bold">
+                        <ShieldAlert className="w-4 h-4" /> Admin Panel
+                      </button>
+                    )}
+                  </div>
+                  <div className="py-1">
+                    <button onClick={() => { onLogout(); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-bold">
+                      <LogOut className="w-4 h-4" /> Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Nav Sub Bar */}
+      <div className="hidden md:block border-t border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-8 h-10">
+          <button className="h-full bg-brand-green text-white px-5 flex items-center gap-3 text-xs font-black uppercase tracking-tight hover:bg-brand-green-dark transition-colors shrink-0">
+             <Menu className="w-4 h-4" />
+             <span>All Categories</span>
+          </button>
+
+          <nav className="flex items-center gap-6 h-full font-black text-[11.5px] uppercase tracking-wide text-black pb-0.5">
+             {[
+               { view: 'home', label: 'Home' },
+               { slug: 'mens-fashion', label: "Men's Fashion" },
+               { slug: 'womens-fashion', label: "Women's Fashion" },
+               { slug: 'kids-zone', label: 'Kids Zone' },
+               { slug: 'gadgets', label: 'Electronics & Gadgets' },
+               { view: 'contact', label: 'Contact' }
+             ].map((link, idx) => {
+               const isActive = link.view ? currentView === link.view : activeCategory === link.slug;
+               return (
+                 <button
+                   key={idx}
+                   onClick={() => {
+                     if (link.slug) {
+                       setActiveCategory(link.slug);
+                       setView('listing');
+                     } else if (link.view === 'contact') {
+                        document.querySelector('footer')?.scrollIntoView({ behavior: 'smooth' });
+                     } else {
+                       setView(link.view!);
+                       setActiveCategory('all');
+                     }
+                   }}
+                   className={`h-full flex items-center border-b-2 transition-all px-1 ${isActive ? 'text-brand-green border-brand-green' : 'border-transparent hover:text-brand-green'}`}
+                 >
+                   {link.label}
+                 </button>
+               )
+             })}
+          </nav>
+        </div>
+      </div>
+
+      {/* Mobile Menu Panel */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[60] md:hidden">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          
+          {/* Sidebar drawer content */}
+          <div className="absolute top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl flex flex-col animate-slideInLeft">
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-brand-green">
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <ShoppingCart className="w-8 h-8 text-white fill-white" />
+                  <span className="absolute inset-0 flex items-center justify-center text-brand-green font-black text-base mb-0.5">A</span>
+                </div>
+                <span className="font-sans font-black text-xl tracking-tighter text-white">
+                  AFD HOUSE
+                </span>
+              </div>
+              <button 
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-1 text-white hover:rotate-90 transition-transform duration-200"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              {/* Mobile search */}
+              <form onSubmit={handleSearchSubmit} className="flex">
+                <input
+                  type="text"
+                  placeholder="Search over 10,000+ items..."
+                  value={localSearch}
+                  onChange={(e) => {
+                    setLocalSearch(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  className="w-full px-3 py-2 border border-blue-100 bg-blue-50/30 text-gray-900 text-sm rounded-l-xl focus:outline-none focus:ring-1 focus:ring-brand-green"
+                />
+                <button type="submit" className="bg-brand-green text-white px-4 rounded-r-xl">
+                  <Search className="w-4 h-4" />
+                </button>
+              </form>
+
+              {/* Mobile Suggestions Dropdown */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden divide-y divide-gray-100 -mt-4 mb-2">
+                  {suggestions.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => {
+                        handleSuggestionClick(p.id);
+                        setMobileMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-50 text-left transition-colors"
+                    >
+                      <img
+                        referrerPolicy="no-referrer"
+                        src={p.images[0]}
+                        alt={p.name}
+                        className="w-10 h-10 object-cover rounded-md border border-gray-100"
+                      />
+                      <div className="flex-1 overflow-hidden">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{p.name}</p>
+                        <p className="text-[10px] text-gray-400 capitalize">{p.category.replace(/-/g, ' ')}</p>
+                      </div>
+                      <span className="text-xs font-bold text-brand-green">৳{p.salePrice || p.price}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Main Nav Links */}
+              <div className="space-y-4">
+                <p className="text-[10px] uppercase text-black font-black tracking-widest px-1">Navigation</p>
+                <div className="grid gap-1">
+                  {[
+                    { view: 'home', label: 'Home', icon: <Tag className="w-4 h-4" /> },
+                    { view: 'tracking', label: 'Track My Order', icon: <Truck className="w-4 h-4" /> },
+                    { view: 'help', label: 'Help Center', icon: <Headphones className="w-4 h-4" /> },
+                    { view: 'sell', label: 'Sell on AFD HOUSE', icon: <Tag className="w-4 h-4" /> },
+                    { view: 'cart', label: 'My Cart', count: cartCount, icon: <ShoppingCart className="w-4 h-4" /> },
+                    { view: 'wishlist', label: 'My Wishlist', count: wishlistCount, icon: <Heart className="w-4 h-4" /> }
+                  ].map((link, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setView(link.view);
+                        setMobileMenuOpen(false);
+                      }}
+                      className={`flex items-center justify-between w-full p-3 rounded-xl transition-colors ${currentView === link.view ? 'bg-brand-green/10 text-brand-green font-black' : 'text-black hover:bg-gray-100 font-bold'}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {link.icon || <ChevronDown className="w-4 h-4" />}
+                        <span className="text-sm">{link.label}</span>
+                      </div>
+                      {link.count !== undefined && link.count > 0 && (
+                        <span className="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                          {link.count}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Departments / Categories */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between px-1">
+                  <p className="text-[10px] uppercase text-black font-black tracking-widest">Departments</p>
+                </div>
+                <div className="grid gap-1">
+                  <button
+                    onClick={() => {
+                      setActiveCategory('all');
+                      setView('listing');
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`text-xs text-left p-3 rounded-xl font-black w-full ${activeCategory === 'all' && currentView === 'listing' ? 'bg-brand-green/10 text-brand-green' : 'text-black hover:bg-gray-100'}`}
+                  >
+                    All Collections
+                  </button>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        setActiveCategory(cat.slug);
+                        setView('listing');
+                        setMobileMenuOpen(false);
+                      }}
+                      className={`text-xs text-left p-3 rounded-xl font-black w-full transition-all ${activeCategory === cat.slug && currentView === 'listing' ? 'bg-brand-green/10 text-brand-green font-black' : 'text-black hover:bg-gray-100'}`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Account Action */}
+            <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+              {user ? (
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-brand-green/20 flex items-center justify-center text-brand-green font-black">
+                      {user.displayName?.charAt(0) || 'U'}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-gray-900 truncate max-w-[120px]">{user.displayName || 'Customer'}</span>
+                      <button onClick={() => { onLogout(); setMobileMenuOpen(false); }} className="text-[10px] text-rose-500 font-black uppercase">Sign Out</button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={toggleTheme}
+                      className="p-2 text-gray-400 hover:text-brand-green"
+                    >
+                      {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                    </button>
+                    <button 
+                      onClick={() => { setView('profile'); setMobileMenuOpen(false); }}
+                      className="p-2 text-gray-400 hover:text-brand-green"
+                    >
+                      <User className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => { setView('auth'); setMobileMenuOpen(false); }}
+                    className="flex-1 bg-brand-green text-white py-3 rounded-xl font-black text-sm shadow-lg shadow-brand-green/20"
+                  >
+                    SIGN IN
+                  </button>
+                  <button 
+                    onClick={toggleTheme}
+                    className="p-3 bg-gray-100 rounded-xl text-gray-500"
+                  >
+                    {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}

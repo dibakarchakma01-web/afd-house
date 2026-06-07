@@ -1,0 +1,121 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'dibakarchakma01@gmail.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+    
+    function isStaff() {
+      return isAdmin() || (isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'staff');
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isStaff();
+      allow create: if isAuthenticated();
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    // Admin list sync
+    match /admins/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Products Collection
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // Categories Collection
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+    
+    // Brands Collection
+    match /brands/{brandId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // Orders Collection
+    match /orders/{orderId} {
+      allow read: if isStaff() || (isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid));
+      allow create: if isAuthenticated();
+      allow update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // Cart Collection (userId_productId)
+    match /cart/{cartId} {
+      allow read: if isAuthenticated() && (isStaff() || cartId.startsWith(request.auth.uid) || (resource != null && resource.data.userId == request.auth.uid));
+      allow write: if isAuthenticated() && (cartId.startsWith(request.auth.uid) || (request.resource != null && request.resource.data.userId == request.auth.uid) || (resource != null && resource.data.userId == request.auth.uid));
+    }
+
+    // Wishlist Collection (userId_productId)
+    match /wishlist/{wishId} {
+      allow read: if isAuthenticated() && (isStaff() || wishId.startsWith(request.auth.uid) || (resource != null && resource.data.userId == request.auth.uid));
+      allow write: if isAuthenticated() && (wishId.startsWith(request.auth.uid) || (request.resource != null && request.resource.data.userId == request.auth.uid) || (resource != null && resource.data.userId == request.auth.uid));
+    }
+
+    // Reviews Collection
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isStaff() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow delete: if isStaff();
+    }
+    
+    // Coupons Collection
+    match /coupons/{code} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff();
+    }
+    
+    // Website Settings
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+    
+    // Support Chat System
+    match /chats/{threadId} {
+      allow read: if isStaff() || (isAuthenticated() && threadId.startsWith(request.auth.uid));
+      allow create: if isAuthenticated();
+      allow update: if isStaff() || (isAuthenticated() && threadId.startsWith(request.auth.uid));
+      allow delete: if isAdmin();
+
+      match /messages/{messageId} {
+        allow read: if isStaff() || (isAuthenticated() && threadId.startsWith(request.auth.uid));
+        allow create: if isStaff() || (isAuthenticated() && threadId.startsWith(request.auth.uid));
+        allow update, delete: if isStaff();
+      }
+    }
+
+    // Notifications
+    match /notifications/{notifId} {
+      allow read: if isStaff() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isStaff();
+      allow update: if isStaff() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow delete: if isStaff();
+    }
+  }
+}

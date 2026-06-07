@@ -1,0 +1,6 @@
+{
+  "name": "AFD HOUSE",
+  "description": "AFD HOUSE - A complete premium modern e-commerce platform featuring dual Customer & Admin dashboards, Firebase integration, live order tracking, category search, and comprehensive catalog management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

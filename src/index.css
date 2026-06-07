@@ -1,0 +1,143 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --color-brand-green: #00743f;
+  --color-brand-green-dark: #005c32;
+  --color-brand-orange: #f97316;
+  --color-brand-red: #e11d48;
+}
+
+/* Base resets & clean white background like the photo */
+body {
+  background-color: #f8fafc;
+  color: #000000;
+}
+
+.dark body {
+  background-color: #0f172a;
+  color: #f1f5f9;
+}
+
+/* Glassmorphism Classes for Ultra Premium "Frosted" Design */
+.glass-nav {
+  background-color: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.03);
+}
+
+.dark .glass-nav {
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+}
+
+.glass-card {
+  background-color: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 
+    0 10px 25px -5px rgba(0, 0, 0, 0.02),
+    0 8px 10px -6px rgba(0, 0, 0, 0.02),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark .glass-card {
+  background-color: rgba(30, 41, 59, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.25),
+    0 8px 10px -6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+.glass-card:hover {
+  background-color: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.05),
+    0 10px 10px -5px rgba(0, 0, 0, 0.03);
+}
+
+.dark .glass-card:hover {
+  background-color: rgba(30, 41, 59, 0.55);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.glass-pill {
+  background-color: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.dark .glass-pill {
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-input {
+  background-color: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(203, 213, 225, 0.4);
+  box-shadow: inset 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+}
+
+.dark .glass-input {
+  background-color: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-input:focus {
+  background-color: rgba(255, 255, 255, 0.6);
+  border-color: rgba(79, 70, 229, 0.4);
+  outline: none;
+}
+
+.dark .glass-input:focus {
+  background-color: rgba(15, 23, 42, 0.6);
+  border-color: rgba(129, 140, 248, 0.3);
+}
+
+/* Custom Scrollbars to match clean theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(155, 155, 155, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(155, 155, 155, 0.4);
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease-out forwards;
+}
