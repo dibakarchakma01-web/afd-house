@@ -97,7 +97,7 @@ export default function Footer({ setView, categories, setActiveCategory }: Foote
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-brand-green shrink-0" />
-                <span>contact@afdhouse.com</span>
+                <span>afdhousebd@gmail.com</span>
               </div>
             </div>
           </div>
