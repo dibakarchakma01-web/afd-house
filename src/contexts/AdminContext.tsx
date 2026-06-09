@@ -47,12 +47,12 @@ const AdminContext = createContext<AdminContextType>({
 
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAdmin, isStaff, loading: authLoading } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [brands, setBrands] = useState<Brand[]>([]);
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const [brands, setBrands] = useState<Brand[]>(INITIAL_BRANDS);
+  const [coupons, setCoupons] = useState<Coupon[]>(INITIAL_COUPONS);
+  const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -125,18 +125,28 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // 1. Public Subscriptions (Products, Categories, Brands, Reviews)
   useEffect(() => {
-    const unsubProducts = productService.subscribeProducts(setProducts);
+    const unsubProducts = productService.subscribeProducts((loadedProducts) => {
+      if (loadedProducts.length > 0) {
+        setProducts(loadedProducts);
+      }
+    });
 
     const unsubCategories = onSnapshot(collection(db, 'categories'), (snap) => {
-      setCategories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category)));
+      if (!snap.empty) {
+        setCategories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category)));
+      }
     });
 
     const unsubBrands = onSnapshot(collection(db, 'brands'), (snap) => {
-      setBrands(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Brand)));
+      if (!snap.empty) {
+        setBrands(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Brand)));
+      }
     });
 
     const unsubReviews = onSnapshot(collection(db, 'reviews'), (snap) => {
-      setReviews(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review)));
+      if (!snap.empty) {
+        setReviews(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review)));
+      }
     });
 
     return () => {
@@ -155,7 +165,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!isAdmin && !isStaff) {
       setOrders([]);
       setCustomers([]);
-      setCoupons([]);
+      // Keep coupons fallback
       setLoading(false);
       return;
     }
@@ -168,24 +178,28 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const unsubOrders = orderService.subscribeAllOrders(setOrders);
 
     const unsubCoupons = onSnapshot(collection(db, 'coupons'), (snap) => {
-      const items: Coupon[] = [];
-      snap.forEach(doc => {
-        const data = doc.data();
-        items.push({
-          code: data.code,
-          discountValue: data.discountValue,
-          discountType: data.discountType,
-          isActive: data.isActive,
-          expiryDate: data.expiryDate,
-          description: data.description,
-          createdAt: data.createdAt || new Date().toISOString()
-        } as Coupon);
-      });
-      setCoupons(items);
+      if (!snap.empty) {
+        const items: Coupon[] = [];
+        snap.forEach(doc => {
+          const data = doc.data();
+          items.push({
+            code: data.code,
+            discountValue: data.discountValue,
+            discountType: data.discountType,
+            isActive: data.isActive,
+            expiryDate: data.expiryDate,
+            description: data.description,
+            createdAt: data.createdAt || new Date().toISOString()
+          } as Coupon);
+        });
+        setCoupons(items);
+      }
     });
 
     const unsubCustomers = onSnapshot(collection(db, 'users'), (snap) => {
-      setCustomers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      if (!snap.empty) {
+        setCustomers(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      }
     });
 
     setLoading(false);

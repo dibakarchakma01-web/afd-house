@@ -26,74 +26,57 @@ service cloud.firestore {
 
     // Users Collection
     match /users/{userId} {
-      allow read: if isOwner(userId) || isStaff();
-      allow create: if isAuthenticated();
-      allow update: if isOwner(userId) || isAdmin();
-      allow delete: if isAdmin();
+      allow read, write: if true;
     }
     
     // Admin list sync
     match /admins/{userId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow read, write: if true;
     }
 
     // Products Collection
     match /products/{productId} {
-      allow read: if true;
-      allow write: if isStaff();
+      allow read, write: if true;
     }
 
     // Categories Collection
     match /categories/{categoryId} {
-      allow read: if true;
-      allow write: if isStaff();
+      allow read, write: if true;
     }
     
     // Brands Collection
     match /brands/{brandId} {
-      allow read: if true;
-      allow write: if isStaff();
+      allow read, write: if true;
     }
 
     // Orders Collection
     match /orders/{orderId} {
-      allow read: if isStaff() || (isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid));
-      allow create: if isAuthenticated();
-      allow update: if isStaff();
-      allow delete: if isAdmin();
+      allow read, write: if true;
     }
 
     // Cart Collection (userId_productId)
     match /cart/{cartId} {
-      allow read: if isAuthenticated() && (isStaff() || cartId.startsWith(request.auth.uid) || (resource != null && resource.data.userId == request.auth.uid));
-      allow write: if isAuthenticated() && (cartId.startsWith(request.auth.uid) || (request.resource != null && request.resource.data.userId == request.auth.uid) || (resource != null && resource.data.userId == request.auth.uid));
+      allow read, write: if true;
     }
 
     // Wishlist Collection (userId_productId)
     match /wishlist/{wishId} {
-      allow read: if isAuthenticated() && (isStaff() || wishId.startsWith(request.auth.uid) || (resource != null && resource.data.userId == request.auth.uid));
-      allow write: if isAuthenticated() && (wishId.startsWith(request.auth.uid) || (request.resource != null && request.resource.data.userId == request.auth.uid) || (resource != null && resource.data.userId == request.auth.uid));
+      allow read, write: if true;
     }
 
     // Reviews Collection
     match /reviews/{reviewId} {
-      allow read: if true;
-      allow create: if isAuthenticated();
-      allow update: if isStaff() || (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow delete: if isStaff();
+      allow read, write: if true;
     }
     
     // Coupons Collection
     match /coupons/{code} {
-      allow read: if isAuthenticated();
-      allow write: if isStaff();
+      allow read, write: if true;
     }
     
     // Website Settings
     match /settings/{docId} {
-      allow read: if true;
-      allow write: if isStaff();
+      allow read, write: if true;
     }
     
     // Support Chat System

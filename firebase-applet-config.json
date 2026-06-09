@@ -1,10 +1,10 @@
 {
-  "projectId": "afd-house",
-  "appId": "1:54716564030:web:18dc78c78b09251ba3876f",
-  "apiKey": "AIzaSyAZojA-McfBy1n7DDrdDt8Yp801bIXXi9c",
-  "authDomain": "afd-house.firebaseapp.com",
+  "projectId": "coral-myth-8cf5x",
+  "appId": "1:1008029676209:web:2a0ca6fef575060b162890",
+  "apiKey": "AIzaSyDgAioooJkgjwOGEPKmmpt7zrj0xFa9eBY",
+  "authDomain": "coral-myth-8cf5x.firebaseapp.com",
   "firestoreDatabaseId": "ai-studio-a60cc837-eb2d-4188-8a90-c2689e271cfb",
-  "storageBucket": "afd-house.firebasestorage.app",
-  "messagingSenderId": "54716564030",
-  "measurementId": "G-VFG0733E8V"
+  "storageBucket": "coral-myth-8cf5x.firebasestorage.app",
+  "messagingSenderId": "1008029676209",
+  "measurementId": ""
 }

@@ -223,48 +223,45 @@ export default function Navbar({
               <span className="hidden sm:block text-[11px] font-bold">Cart</span>
             </button>
 
-            {/* Account */}
-            <div className="relative group">
-              <button
-                onClick={() => user ? setUserDropdownOpen(!userDropdownOpen) : setView('auth')}
-                className="flex items-center gap-2 group text-black font-extrabold hover:text-brand-green transition-colors"
-              >
-                <div className="p-2 border border-gray-200 rounded-full group-hover:border-brand-green transition-colors">
-                  <User className="w-5 h-5" />
-                </div>
-                <div className="hidden lg:flex flex-col items-start leading-tight">
-                  <span className="text-[10px] text-gray-800 font-black uppercase transition-colors">Hello, {user ? 'Sign in' : 'Sign in'}</span>
-                  <div className="flex items-center gap-0.5">
-                    <span className="text-[11px] font-black uppercase">My Account</span>
-                    <ChevronDown className="w-3 h-3" />
+            {/* Account - Displays only for authenticated administrators */}
+            {isAdminUser && (
+              <div className="relative group">
+                <button
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center gap-2 group text-black dark:text-white font-extrabold hover:text-brand-green transition-colors"
+                >
+                  <div className="p-2 border border-gray-255 rounded-full group-hover:border-brand-green transition-colors bg-brand-green/10 text-brand-green">
+                    <ShieldAlert className="w-5 h-5" />
                   </div>
-                </div>
-              </button>
+                  <div className="hidden lg:flex flex-col items-start leading-tight">
+                    <span className="text-[10px] text-gray-500 font-bold uppercase">ADMINISTRATOR</span>
+                    <div className="flex items-center gap-0.5">
+                      <span className="text-[11px] font-black uppercase">Admin Panel</span>
+                      <ChevronDown className="w-3 h-3" />
+                    </div>
+                  </div>
+                </button>
 
-              {user && userDropdownOpen && (
-                <div className="absolute right-0 mt-3 w-56 rounded-xl bg-white border border-gray-100 shadow-2xl z-50 overflow-hidden divide-y divide-gray-50">
-                  <div className="px-4 py-3 bg-gray-50/50">
-                    <p className="text-xs text-gray-400">Signed In As</p>
-                    <p className="text-sm font-bold text-gray-900 truncate">{user.displayName || 'Customer'}</p>
-                  </div>
-                  <div className="py-1">
-                    <button onClick={() => { setView('profile'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 font-medium">
-                      <User className="w-4 h-4 text-gray-400" /> My Profile
-                    </button>
-                    {isAdminUser && (
-                      <button onClick={() => { setView('admin'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-brand-green hover:bg-gray-50 flex items-center gap-2 font-bold">
-                        <ShieldAlert className="w-4 h-4" /> Admin Panel
+                {userDropdownOpen && (
+                  <div className="absolute right-0 mt-3 w-56 rounded-xl bg-white border border-gray-100 shadow-2xl z-50 overflow-hidden divide-y divide-gray-50">
+                    <div className="px-4 py-3 bg-gray-50/50">
+                      <p className="text-xs text-gray-400">Signed In As</p>
+                      <p className="text-sm font-bold text-gray-900 truncate">Store Owner</p>
+                    </div>
+                    <div className="py-1">
+                      <button onClick={() => { setView('admin'); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-brand-green hover:bg-gray-50 flex items-center gap-2 font-black">
+                        <ShieldAlert className="w-4 h-4" /> Admin Dashboard
                       </button>
-                    )}
+                    </div>
+                    <div className="py-1">
+                      <button onClick={() => { onLogout(); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-bold">
+                        <LogOut className="w-4 h-4" /> Sign Out
+                      </button>
+                    </div>
                   </div>
-                  <div className="py-1">
-                    <button onClick={() => { onLogout(); setUserDropdownOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2 font-bold">
-                      <LogOut className="w-4 h-4" /> Sign Out
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -456,14 +453,14 @@ export default function Navbar({
 
             {/* Bottom Account Action */}
             <div className="p-4 border-t border-gray-100 bg-gray-50/50">
-              {user ? (
+              {isAdminUser && user ? (
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-brand-green/20 flex items-center justify-center text-brand-green font-black">
-                      {user.displayName?.charAt(0) || 'U'}
+                      {user.displayName?.charAt(0) || 'A'}
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-xs font-bold text-gray-900 truncate max-w-[120px]">{user.displayName || 'Customer'}</span>
+                      <span className="text-xs font-bold text-gray-900 truncate max-w-[120px]">Store Owner</span>
                       <button onClick={() => { onLogout(); setMobileMenuOpen(false); }} className="text-[10px] text-rose-500 font-black uppercase">Sign Out</button>
                     </div>
                   </div>
@@ -475,24 +472,19 @@ export default function Navbar({
                       {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
                     </button>
                     <button 
-                      onClick={() => { setView('profile'); setMobileMenuOpen(false); }}
+                      onClick={() => { setView('admin'); setMobileMenuOpen(false); }}
                       className="p-2 text-gray-400 hover:text-brand-green"
                     >
-                      <User className="w-5 h-5" />
+                      <ShieldAlert className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-4">
-                  <button
-                    onClick={() => { setView('auth'); setMobileMenuOpen(false); }}
-                    className="flex-1 bg-brand-green text-white py-3 rounded-xl font-black text-sm shadow-lg shadow-brand-green/20"
-                  >
-                    SIGN IN
-                  </button>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-xs text-gray-400 font-bold">AFD HOUSE Guest checkout active</span>
                   <button 
                     onClick={toggleTheme}
-                    className="p-3 bg-gray-100 rounded-xl text-gray-500"
+                    className="p-3 bg-gray-100 dark:bg-slate-800 rounded-xl text-gray-500 dark:text-gray-400"
                   >
                     {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
                   </button>

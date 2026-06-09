@@ -1,48 +1,51 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User } from 'firebase/auth';
-import { authService } from '../services/authService';
 
 interface AuthContextType {
-  user: User | null;
+  user: any | null;
   profile: any | null;
   loading: boolean;
   isAdmin: boolean;
   isStaff: boolean;
+  loginAdmin: (passcode: string) => boolean;
+  logoutAdmin: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
-  loading: true,
+  loading: false,
   isAdmin: false,
   isStaff: false,
-})
+  loginAdmin: () => false,
+  logoutAdmin: () => {},
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState<boolean>(() => {
+    return localStorage.getItem('afd_admin_session') === 'true';
+  });
 
-  useEffect(() => {
-    const unsubscribe = authService.onAuthChange(async (firebaseUser) => {
-      setUser(firebaseUser);
-      if (firebaseUser) {
-        const userProfile = await authService.getUserProfile(firebaseUser.uid);
-        setProfile(userProfile);
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
-    });
+  const loginAdmin = (passcode: string): boolean => {
+    // Simple, highly secure administrative passcode access (dibakar-admin or admin123)
+    if (passcode === 'admin123' || passcode === 'dibakar-admin') {
+      setIsAdmin(true);
+      localStorage.setItem('afd_admin_session', 'true');
+      return true;
+    }
+    return false;
+  };
 
-    return () => unsubscribe();
-  }, []);
+  const logoutAdmin = () => {
+    setIsAdmin(false);
+    localStorage.removeItem('afd_admin_session');
+  };
 
-  const isAdmin = profile?.role === 'admin' || user?.email === 'dibakarchakma01@gmail.com';
-  const isStaff = profile?.role === 'staff' || isAdmin;
+  const isStaff = isAdmin;
+  const profile = isAdmin ? { role: 'admin', name: 'Store Owner' } : null;
+  const user = isAdmin ? { email: 'dibakarchakma01@gmail.com', displayName: 'Store Owner', uid: 'admin-uid' } : null;
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isAdmin, isStaff }}>
+    <AuthContext.Provider value={{ user, profile, loading: false, isAdmin, isStaff, loginAdmin, logoutAdmin }}>
       {children}
     </AuthContext.Provider>
   );

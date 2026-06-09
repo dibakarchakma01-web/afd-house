@@ -105,7 +105,15 @@ export default function Footer({ setView, categories, setActiveCategory }: Foote
 
         {/* Footer Base bar */}
         <div className="border-t border-gray-200 mt-16 pt-10 flex flex-col sm:flex-row items-center justify-between gap-6 text-[11px] font-black text-black">
-          <p>© 2026 AFD HOUSE Bangladesh Ltd. All Rights Reserved.</p>
+          <p>
+            © 2026 AFD HOUSE Bangladesh Ltd. All Rights Reserved.
+            <button 
+              onClick={() => setView?.('auth')} 
+              className="ml-3 text-gray-400 hover:text-indigo-650 transition-colors cursor-pointer text-[10px] font-bold"
+            >
+              • Staff Portal
+            </button>
+          </p>
           <div className="flex items-center gap-6 opacity-30">
             <span>BKASH</span>
             <span>NAGAD</span>

@@ -232,11 +232,7 @@ export default function App() {
 
   const handleBuyNow = async (product: Product) => {
     await handleAddToCart(product);
-    if (!user) {
-      setView('auth');
-    } else {
-      setView('checkout');
-    }
+    setView('checkout');
   };
 
   const handleUpdateQty = async (productId: string, quantity: number) => {
@@ -607,11 +603,7 @@ export default function App() {
             onSelectProduct={handleSelectProduct}
             onBackToShop={() => setView('home')}
             onProceedToCheckout={() => {
-              if (!user) {
-                setView('auth');
-              } else {
-                setView('checkout');
-              }
+              setView('checkout');
             }}
             couponCode={couponCode}
             setCouponCode={setCouponCode}

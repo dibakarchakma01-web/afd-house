@@ -47,6 +47,7 @@ export default function CheckoutView({
   // Shipping form states
   const [name, setName] = useState(user?.displayName || '');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -148,7 +149,7 @@ export default function CheckoutView({
         id: randomOrderId,
         userId: user?.uid || 'guest-session',
         customerName: name,
-        customerEmail: user?.email || 'guest@example.com',
+        customerEmail: email || 'guest@example.com',
         products: purchasedProducts,
         total: subtotal,
         discount: discountValue,
@@ -176,7 +177,7 @@ export default function CheckoutView({
         batch.update(productRef, { stock: nextStock });
       });
 
-      // 3. Clear the Firestore cart documents atomically on success
+      // 3. Clear the Firestore cart documents atomically on success (if user session exists)
       if (user) {
         cart.forEach((item) => {
           const cartItemRef = doc(db, 'cart', `${user.uid}_${item.product.id}`);
@@ -186,6 +187,9 @@ export default function CheckoutView({
 
       // Commit transaction
       await batch.commit();
+
+      // Email configuration is temporarily disabled for now. Saving strictly to Firestore instead.
+      console.log(`[Firestore Success] Order "${newOrder.id}" saved to Firebase Firestore. Admin notification skipped.`);
 
       setSimulatorStep('success');
       setTimeout(() => {
@@ -643,7 +647,7 @@ async function createStripePaymentIntent(orderId, bdtAmount) {
             </h2>
 
             <form onSubmit={handleOpenPaymentSimulator} className="p-6 glass-card rounded-2xl space-y-6 border border-gray-150/40 dark:border-slate-800">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-gray-700 dark:text-gray-300">Recipient Full Name</label>
                   <input
@@ -667,7 +671,19 @@ async function createStripePaymentIntent(orderId, bdtAmount) {
                     placeholder="e.g. 01712345678"
                     className="w-full text-xs px-3.5 py-2.5 border-none bg-gray-50 dark:bg-slate-850 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all font-mono"
                   />
-                  <span className="text-[10px] text-gray-400 block mt-1">Must be an 11-digit mobile number starting with 01</span>
+                  <span className="text-[10px] text-gray-400 block mt-1">Starting with 01</span>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 font-sans">Email Address (Optional)</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="e.g. customer@example.com"
+                    className="w-full text-xs px-3.5 py-2.5 border-none bg-gray-50 dark:bg-slate-850 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all font-sans"
+                  />
+                  <span className="text-[10px] text-gray-400 block mt-1">For receiving invoice copy</span>
                 </div>
               </div>
 
