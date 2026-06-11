@@ -1015,7 +1015,7 @@ export default function AdminDashboardView({ onBackToShop, onLogout }: AdminDash
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full border border-gray-150 dark:border-slate-800 overflow-hidden flex items-center justify-center bg-white shrink-0 shadow-sm">
                 <img 
-                  src="/logo.png" 
+                  src="/logo.png?v=4" 
                   alt="AFD House Logo" 
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"

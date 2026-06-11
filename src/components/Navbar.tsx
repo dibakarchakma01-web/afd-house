@@ -126,7 +126,7 @@ export default function Navbar({
             >
               <div className="w-10 h-10 rounded-full border border-gray-150 overflow-hidden shadow-sm flex items-center justify-center bg-white shrink-0">
                 <img 
-                  src="/logo.png" 
+                  src="/logo.png?v=4" 
                   alt="AFD House Logo" 
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
@@ -452,7 +452,7 @@ export default function Navbar({
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-full border border-white/20 overflow-hidden flex items-center justify-center bg-white shrink-0">
                   <img 
-                    src="/logo.png" 
+                    src="/logo.png?v=4" 
                     alt="AFD House Logo" 
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"

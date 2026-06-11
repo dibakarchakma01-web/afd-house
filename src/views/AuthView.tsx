@@ -31,7 +31,7 @@ export default function AuthView({ onSuccess, onBack }: AuthViewProps) {
         <div className="flex justify-center">
           <div className="w-16 h-16 rounded-full border border-gray-200 dark:border-slate-800 overflow-hidden shadow-md flex items-center justify-center bg-white">
             <img 
-              src="/logo.png" 
+              src="/logo.png?v=4" 
               alt="AFD House Logo" 
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"
