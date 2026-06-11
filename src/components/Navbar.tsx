@@ -89,23 +89,6 @@ export default function Navbar({
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-100 transition-colors duration-200">
-      {/* Top Flash Sale Bar */}
-      <div className="bg-brand-green-dark px-4 py-1.5 text-white flex items-center justify-between text-[11px] font-medium max-w-7xl mx-auto lg:px-8">
-        <div className="flex items-center gap-2">
-          <Flame className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
-          <span>FLASH SALE: Extra 30% OFF on all brand apparel! Use Coupon: <span className="font-bold">ZUNO30</span></span>
-        </div>
-        <div className="hidden sm:flex items-center gap-5 opacity-90">
-          <button onClick={() => setView('tracking')} className="hover:text-orange-400 flex items-center gap-1">
-            <Tag className="w-3 h-3" /> Track Order
-          </button>
-          <button className="hover:text-orange-400 flex items-center gap-1">
-            <Headphones className="w-3 h-3" /> Help Center
-          </button>
-          <button className="hover:text-orange-400">Sell on AFD HOUSE</button>
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between gap-8">
           
