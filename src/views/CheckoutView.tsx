@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   ArrowLeft, 
   CreditCard, 
@@ -37,6 +37,17 @@ interface CheckoutViewProps {
 type TabType = 'customer' | 'developer';
 type DevTabType = 'bkash' | 'nagad' | 'sslcommerz' | 'stripe';
 
+const DISTRICTS_AND_UPAZILAS: Record<string, string[]> = {
+  "Dhaka": ["Mirpur", "Uttara", "Gulshan", "Dhanmondi", "Banani", "Motijheel", "Mohammadpur", "Tejgaon", "Khilgaon", "Savar", "Dhamrai", "Keraniganj", "Badda", "Ramna", "Hazaribagh", "Lalbagh", "Sutrapur", "Jatrabari", "Demra", "Cantonment"],
+  "Chattogram": ["Panchlaish", "Double Mooring", "Halishahar", "Bakalia", "Kotwali", "Hathazari", "Sitakunda", "Mirsharai", "Patiya", "Rangunia", "Anwara", "Boalkhali", "Chandanpura", "Lohagara", "Fatikchhari", "Sandwip"],
+  "Sylhet": ["Sylhet Sadar", "Beanibazar", "Golapganj", "Zakiganj", "Fenchuganj", "Balaganj", "Jaintiapur", "Gowainghat", "Companiganj", "Kanaighat", "Biswanath"],
+  "Rajshahi": ["Boalia", "Rajpara", "Matihar", "Shah Makhdum", "Paba Sadar", "Bagha", "Charghat", "Godagari", "Tanore", "Puthia", "Mohanpur", "Durgapur", "Bagmara"],
+  "Khulna": ["Khulna Sadar", "Daulatpur", "Khalishpur", "Sonadanga", "Batiaghata", "Dacope", "Dumuria", "Phultala", "Paikgachha", "Koyra", "Terokhada", "Dighalia"],
+  "Barishal": ["Barishal Sadar", "Babuganj", "Bakerganj", "Banaripara", "Gournadi", "Hizla", "Mehendiganj", "Wazirpur", "Muladi", "Agailjhara"],
+  "Rangpur": ["Rangpur Sadar", "Badarganj", "Gangachara", "Kaunia", "Mithapukur", "Pirgachha", "Pirganj", "Taraganj"],
+  "Mymensingh": ["Mymensingh Sadar", "Muktagachha", "Bhaluka", "Trishal", "Gaffargaon", "Nandail", "Ishwarganj", "Haluaghat", "Dhobaura", "Fulbaria", "Gouripur"]
+};
+
 export default function CheckoutView({
   cart,
   user,
@@ -48,10 +59,21 @@ export default function CheckoutView({
   const [name, setName] = useState(user?.displayName || '');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [email, setEmail] = useState('');
+  const [district, setDistrict] = useState('');
+  const [upazila, setUpazila] = useState('');
   const [address, setAddress] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'bKash' | 'Nagad' | 'SSLCommerz' | 'Stripe' | 'COD'>('bKash');
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Refs for focusing errors
+  const nameRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const districtRef = useRef<HTMLSelectElement>(null);
+  const upazilaRef = useRef<HTMLSelectElement>(null);
+  const addressRef = useRef<HTMLTextAreaElement>(null);
   
   // Tab control states: customer view vs developer/payload integrations
   const [activeWorkspaceTab, setActiveWorkspaceTab] = useState<TabType>('customer');
@@ -90,10 +112,57 @@ export default function CheckoutView({
 
   const finalTotal = Math.max(0, subtotal - discountValue);
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = { ...errors };
+    // Clear previous errors first
+    const checkedErrors: Record<string, string> = {};
+
+    if (!name.trim()) {
+      checkedErrors.name = "Full Name is required";
+    }
+    if (!phoneNumber.trim()) {
+      checkedErrors.phoneNumber = "Phone Number is required";
+    } else {
+      const cleanPhone = phoneNumber.replace(/\s+/g, '');
+      const isBDPhone = /^(?:\+?88)?01[3-9]\d{8}$/.test(cleanPhone);
+      if (!isBDPhone) {
+        checkedErrors.phoneNumber = "Please enter a valid BD phone number (e.g. 01712345678)";
+      }
+    }
+    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      checkedErrors.email = "Please enter a valid email address";
+    }
+    if (!district) {
+      checkedErrors.district = "Please select your District";
+    }
+    if (!upazila) {
+      checkedErrors.upazila = "Please select your Upazila/Area";
+    }
+    if (!address.trim()) {
+      checkedErrors.address = "Full Delivery Address is required";
+    } else if (address.trim().length < 8) {
+      checkedErrors.address = "Please provide a more specific delivery address";
+    }
+
+    setErrors(checkedErrors);
+
+    const hasErrors = Object.keys(checkedErrors).length > 0;
+    if (hasErrors) {
+      // Auto-focus on first error
+      if (checkedErrors.name && nameRef.current) nameRef.current.focus();
+      else if (checkedErrors.phoneNumber && phoneRef.current) phoneRef.current.focus();
+      else if (checkedErrors.email && emailRef.current) emailRef.current.focus();
+      else if (checkedErrors.district && districtRef.current) districtRef.current.focus();
+      else if (checkedErrors.upazila && upazilaRef.current) upazilaRef.current.focus();
+      else if (checkedErrors.address && addressRef.current) addressRef.current.focus();
+      return false;
+    }
+    return true;
+  };
+
   const handleOpenPaymentSimulator = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !phoneNumber || !address) {
-      alert('Please fill in all required shipping details.');
+    if (!validateForm()) {
       return;
     }
     if (!agreedToTerms) {
@@ -145,6 +214,8 @@ export default function CheckoutView({
 
       const randomOrderId = 'ZM-' + Math.floor(100000 + Math.random() * 900000);
 
+      const computedShippingAddress = `${address}, Upazila: ${upazila}, District: ${district}. Phone: ${phoneNumber}`;
+
       const newOrder: Order = {
         id: randomOrderId,
         userId: user?.uid || 'guest-session',
@@ -157,7 +228,7 @@ export default function CheckoutView({
         paymentMethod: activeMethod as any,
         paymentStatus: activeMethod === 'COD' ? 'Pending' : 'Paid', 
         status: 'Pending',
-        shippingAddress: `${address}, Phone: ${phoneNumber}`,
+        shippingAddress: computedShippingAddress,
         deliveryNotes: deliveryNotes,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -637,189 +708,395 @@ async function createStripePaymentIntent(orderId, bdtAmount) {
         </div>
       ) : (
         /* ================= CUSTOMER WORKSPACE PANEL ================= */
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start duration-200">
           
           {/* Shipping Form Card */}
-          <div className="lg:col-span-2 space-y-6">
-            <h2 className="text-lg font-black text-gray-905 dark:text-white tracking-tight flex items-center gap-2">
-              <Truck className="w-5 h-5 text-indigo-600" />
-              <span>Customer Shipping & delivery Address</span>
-            </h2>
+          <div className="lg:col-span-7 space-y-6">
+            <div className="flex items-center gap-2.5">
+              <div className="bg-indigo-100 dark:bg-slate-850 p-2.5 rounded-xl text-indigo-600 dark:text-indigo-400">
+                <Truck className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-gray-900 dark:text-white tracking-tight leading-none">
+                  Delivery Information
+                </h2>
+                <p className="text-xs text-gray-500 mt-1">Please provide accurate delivery coordinates</p>
+              </div>
+            </div>
 
-            <form onSubmit={handleOpenPaymentSimulator} className="p-6 glass-card rounded-2xl space-y-6 border border-gray-150/40 dark:border-slate-800">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300">Recipient Full Name</label>
+            <form 
+              id="checkout-shipping-form" 
+              onSubmit={handleOpenPaymentSimulator} 
+              className="p-6 md:p-8 bg-white dark:bg-slate-900 rounded-3xl space-y-6 border border-gray-150/45 dark:border-slate-800 shadow-sm"
+              noValidate
+            >
+              {/* Name and Phone Input */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-750 dark:text-gray-250 flex items-center">
+                    Recipient Full Name <span className="text-rose-500 ml-1 font-extrabold">*</span>
+                  </label>
                   <input
+                    ref={nameRef}
                     type="text"
                     required
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (errors.name) {
+                        const nextErrors = { ...errors };
+                        delete nextErrors.name;
+                        setErrors(nextErrors);
+                      }
+                    }}
                     placeholder="e.g. Robin Rahman"
-                    className="w-full text-xs px-3.5 py-2.5 border-none bg-gray-50 dark:bg-slate-850 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all font-sans"
+                    className={`w-full text-sm h-12 px-4 border rounded-xl focus:outline-none focus:ring-1 transition-all ${
+                      errors.name 
+                        ? 'border-rose-500 focus:ring-rose-500/50 bg-rose-50/5 dark:bg-rose-950/5' 
+                        : 'border-gray-200 dark:border-slate-800 focus:ring-indigo-500/50 bg-gray-50/40 dark:bg-slate-855 text-gray-900 dark:text-white'
+                    }`}
                   />
+                  {errors.name && (
+                    <span className="text-rose-500 text-[11px] font-bold flex items-center gap-1 leading-none mt-1 animate-fadeIn">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      {errors.name}
+                    </span>
+                  )}
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 font-sans">Contact Phone (+880)</label>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-750 dark:text-gray-250 flex items-center">
+                    Contact Phone (+880) <span className="text-rose-500 ml-1 font-extrabold">*</span>
+                  </label>
                   <input
+                    ref={phoneRef}
                     type="tel"
                     required
-                    pattern="(?:\+?8801|01)[3-9][0-9]{8}"
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\s+/g, ''))}
+                    onChange={(e) => {
+                      setPhoneNumber(e.target.value.replace(/\s+/g, ''));
+                      if (errors.phoneNumber) {
+                        const nextErrors = { ...errors };
+                        delete nextErrors.phoneNumber;
+                        setErrors(nextErrors);
+                      }
+                    }}
                     placeholder="e.g. 01712345678"
-                    className="w-full text-xs px-3.5 py-2.5 border-none bg-gray-50 dark:bg-slate-850 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all font-mono"
+                    className={`w-full text-sm h-12 px-4 border rounded-xl focus:outline-none focus:ring-1 transition-all font-mono ${
+                      errors.phoneNumber 
+                        ? 'border-rose-500 focus:ring-rose-500/50 bg-rose-50/5 dark:bg-rose-950/5' 
+                        : 'border-gray-200 dark:border-slate-800 focus:ring-indigo-500/50 bg-gray-50/40 dark:bg-slate-855 text-gray-900 dark:text-white'
+                    }`}
                   />
-                  <span className="text-[10px] text-gray-400 block mt-1">Allows 01, +8801, or 8801 formats</span>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 font-sans">Email Address (Optional)</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="e.g. customer@example.com"
-                    className="w-full text-xs px-3.5 py-2.5 border-none bg-gray-50 dark:bg-slate-850 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all font-sans"
-                  />
-                  <span className="text-[10px] text-gray-400 block mt-1">For receiving invoice copy</span>
+                  {errors.phoneNumber ? (
+                    <span className="text-rose-500 text-[11px] font-bold flex items-center gap-1 leading-none mt-1 animate-fadeIn">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      {errors.phoneNumber}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-gray-400 block mt-1 leading-none">Bangladesh operator formats (e.g. 017xxxxxxxx)</span>
+                  )}
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block">Delivery Address Details (Dhaka, Bangladesh)</label>
-                <textarea
-                  required
-                  rows={2}
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="e.g. House 45, Road 12, Banani, Dhaka-1213"
-                  className="w-full text-xs px-3.5 py-2.5 border-none bg-gray-50 dark:bg-slate-850 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all font-sans"
+              {/* Email Input (Optional) */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-750 dark:text-gray-250 block">
+                  Email Address <span className="text-gray-400 font-normal ml-1">(Optional)</span>
+                </label>
+                <input
+                  ref={emailRef}
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errors.email) {
+                      const nextErrors = { ...errors };
+                      delete nextErrors.email;
+                      setErrors(nextErrors);
+                    }
+                  }}
+                  placeholder="e.g. customer@example.com"
+                  className={`w-full text-sm h-12 px-4 border rounded-xl focus:outline-none focus:ring-1 transition-all ${
+                    errors.email 
+                      ? 'border-rose-500 focus:ring-rose-500/50 bg-rose-50/5 dark:bg-rose-950/5' 
+                      : 'border-gray-200 dark:border-slate-800 focus:ring-indigo-500/50 bg-gray-50/40 dark:bg-slate-855 text-gray-900 dark:text-white'
+                  }`}
                 />
+                {errors.email ? (
+                  <span className="text-rose-500 text-[11px] font-bold flex items-center gap-1 leading-none mt-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    {errors.email}
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-gray-400 block mt-1 leading-none">For downloading transaction statement & digital invoices</span>
+                )}
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-gray-700 dark:text-gray-300 block">Order Notes (Optional)</label>
+              {/* Area Routing Dropdowns - District & Upazila */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-750 dark:text-gray-250 flex items-center">
+                    District <span className="text-rose-500 ml-1 font-extrabold">*</span>
+                  </label>
+                  <select
+                    ref={districtRef}
+                    required
+                    value={district}
+                    onChange={(e) => {
+                      const selDistrict = e.target.value;
+                      setDistrict(selDistrict);
+                      setUpazila(''); // Reset upazila cascade
+                      const nextErrors = { ...errors };
+                      delete nextErrors.district;
+                      delete nextErrors.upazila;
+                      setErrors(nextErrors);
+                    }}
+                    className={`w-full text-sm h-12 px-4 border rounded-xl focus:outline-none focus:ring-1 transition-all bg-no-repeat cursor-pointer ${
+                      errors.district 
+                        ? 'border-rose-500 focus:ring-rose-500/50 bg-rose-50/5 dark:bg-rose-950/5' 
+                        : 'border-gray-200 dark:border-slate-800 focus:ring-indigo-500/50 bg-gray-50/40 dark:bg-slate-855 text-gray-900 dark:text-white'
+                    }`}
+                  >
+                    <option value="" className="text-gray-400">-- Select District --</option>
+                    {Object.keys(DISTRICTS_AND_UPAZILAS).sort().map((distName) => (
+                      <option key={distName} value={distName} className="dark:bg-slate-900">{distName}</option>
+                    ))}
+                  </select>
+                  {errors.district && (
+                    <span className="text-rose-500 text-[11px] font-bold flex items-center gap-1 leading-none mt-1 animate-fadeIn">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      {errors.district}
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-750 dark:text-gray-250 flex items-center">
+                    Upazila / Area <span className="text-rose-500 ml-1 font-extrabold">*</span>
+                  </label>
+                  <select
+                    ref={upazilaRef}
+                    required
+                    disabled={!district}
+                    value={upazila}
+                    onChange={(e) => {
+                      setUpazila(e.target.value);
+                      if (errors.upazila) {
+                        const nextErrors = { ...errors };
+                        delete nextErrors.upazila;
+                        setErrors(nextErrors);
+                      }
+                    }}
+                    className={`w-full text-sm h-12 px-4 border rounded-xl focus:outline-none focus:ring-1 transition-all cursor-pointer ${
+                      !district ? 'opacity-55 cursor-not-allowed bg-gray-150/40' : ''
+                    } ${
+                      errors.upazila 
+                        ? 'border-rose-500 focus:ring-rose-500/50 bg-rose-50/5 dark:bg-rose-950/5' 
+                        : 'border-gray-200 dark:border-slate-800 focus:ring-indigo-500/50 bg-gray-50/40 dark:bg-slate-855 text-gray-900 dark:text-white'
+                    }`}
+                  >
+                    <option value="">-- {district ? 'Select Area' : 'Select District First'} --</option>
+                    {district && DISTRICTS_AND_UPAZILAS[district].sort().map((upzName) => (
+                      <option key={upzName} value={upzName} className="dark:bg-slate-900">{upzName}</option>
+                    ))}
+                  </select>
+                  {errors.upazila && (
+                    <span className="text-rose-500 text-[11px] font-bold flex items-center gap-1 leading-none mt-1 animate-fadeIn">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      {errors.upazila}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Full Delivery Address Details */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-750 dark:text-gray-250 flex items-center">
+                  Full Delivery Address <span className="text-rose-500 ml-1 font-extrabold">*</span>
+                </label>
+                <textarea
+                  ref={addressRef}
+                  required
+                  rows={3}
+                  value={address}
+                  onChange={(e) => {
+                    setAddress(e.target.value);
+                    if (errors.address) {
+                      const nextErrors = { ...errors };
+                      delete nextErrors.address;
+                      setErrors(nextErrors);
+                    }
+                  }}
+                  placeholder="e.g. House 45, Floor 3A, Road 12, Block F, Banani"
+                  className={`w-full text-sm py-3 px-4 border rounded-xl focus:outline-none focus:ring-1 transition-all ${
+                    errors.address 
+                      ? 'border-rose-500 focus:ring-rose-500/50 bg-rose-50/5 dark:bg-rose-950/5' 
+                      : 'border-gray-200 dark:border-slate-800 focus:ring-indigo-500/50 bg-gray-50/40 dark:bg-slate-855 text-gray-900 dark:text-white'
+                  }`}
+                />
+                {errors.address && (
+                  <span className="text-rose-500 text-[11px] font-bold flex items-center gap-1 mt-1 leading-tight animate-fadeIn">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    {errors.address}
+                  </span>
+                )}
+              </div>
+
+              {/* Order Notes */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-gray-750 dark:text-gray-250 block">
+                  Order Notes <span className="text-gray-405 font-normal ml-1">(Optional)</span>
+                </label>
                 <textarea
                   rows={2}
                   value={deliveryNotes}
                   onChange={(e) => setDeliveryNotes(e.target.value)}
-                  placeholder="e.g. Please call before delivery, or leave at the front desk."
-                  className="w-full text-xs px-3.5 py-2.5 border-none bg-gray-50 dark:bg-slate-850 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all font-sans"
+                  placeholder="e.g. Please leave at front reception desk or call prior to delivery arrival."
+                  className="w-full text-sm py-3 px-4 border border-gray-200 dark:border-slate-800 focus:ring-1 focus:ring-indigo-500/50 bg-gray-50/40 dark:bg-slate-855 text-gray-900 dark:text-white rounded-xl focus:outline-none transition-all"
                 />
               </div>
 
               {/* Payment Method Selector */}
-              <div className="space-y-3.5 pt-2">
-                <label className="text-xs font-bold text-gray-750 dark:text-gray-300 flex items-center gap-1.5 leading-none">
-                  <CreditCard className="w-4 h-4 text-indigo-550" />
-                  <span>Choose Payment Terminal Gateway Method</span>
+              <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-slate-850">
+                <label className="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2 leading-none">
+                  <CreditCard className="w-4 h-4 text-emerald-555" />
+                  <span>Choose Payment Method</span>
                 </label>
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                   {[
-                    { id: 'bKash', label: 'bKash Pay', desc: 'Secure Mobile MFS Checkout', activeBg: 'border-pink-500 bg-pink-50/20 dark:bg-pink-950/10 text-pink-750 dark:text-pink-400' },
-                    { id: 'Nagad', label: 'Nagad Pay', desc: 'Fast MFS Wallet Transfer', activeBg: 'border-amber-500 bg-amber-50/20 dark:bg-amber-950/10 text-amber-700 dark:text-amber-400' },
-                    { id: 'SSLCommerz', label: 'SSLCommerz', desc: 'Visa, Master & Internet Banking', activeBg: 'border-cyan-500 bg-cyan-50/20 dark:bg-cyan-950/10 text-cyan-705 dark:text-cyan-400' },
-                    { id: 'Stripe', label: 'Stripe Credit', desc: 'International Credit Cards', activeBg: 'border-indigo-500 bg-indigo-50/20 dark:bg-indigo-950/10 text-indigo-650 dark:text-indigo-400' },
-                    { id: 'COD', label: 'Cash On Delivery', desc: 'Pay when you receive items', activeBg: 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/10 text-emerald-700 dark:text-emerald-400' },
+                    { id: 'bKash', label: 'bKash Wallet', desc: 'Secure Instant Checkout', activeBg: 'border-[#e21251] bg-[#e21251]/5 text-[#e21251] dark:text-[#f45c85]' },
+                    { id: 'Nagad', label: 'Nagad Wallet', desc: 'Fast digital MFS', activeBg: 'border-orange-500 bg-orange-50/10 text-orange-650 dark:text-orange-400' },
+                    { id: 'SSLCommerz', label: 'Cards / Banking', desc: 'BD Multi-channel portal', activeBg: 'border-cyan-600 bg-cyan-50/10 text-cyan-700 dark:text-cyan-400' },
+                    { id: 'Stripe', label: 'Credit Card', desc: 'International VISA / Master', activeBg: 'border-indigo-600 bg-indigo-50/10 text-indigo-700 dark:text-indigo-400' },
+                    { id: 'COD', label: 'Cash On Delivery', desc: 'Pay when products arrive', activeBg: 'border-emerald-600 bg-emerald-50/10 text-emerald-700 dark:text-emerald-400' },
                   ].map((term) => (
                     <button
                       key={term.id}
                       type="button"
                       onClick={() => setPaymentMethod(term.id as any)}
-                      className={`p-3.5 rounded-2xl border flex flex-col items-start text-left cursor-pointer duration-200 select-none ${
+                      className={`p-4 rounded-xl border flex flex-col items-start text-left cursor-pointer duration-200 selection-none ${
                         paymentMethod === term.id
-                          ? `${term.activeBg} font-black shadow-md border-2`
-                          : 'border-gray-200 dark:border-slate-800 hover:border-gray-300 hover:bg-gray-50/50 dark:hover:bg-slate-850/40 text-gray-700 dark:text-gray-300'
+                          ? `${term.activeBg} font-extrabold shadow-sm border-2 ring-1 ring-offset-1 ring-offset-white dark:ring-offset-slate-900 ring-indigo-500`
+                          : 'border-gray-200 dark:border-slate-800 hover:border-gray-305 hover:bg-gray-50/50 dark:hover:bg-slate-850/40 text-gray-700 dark:text-gray-300'
                       }`}
                     >
-                      <span className="text-xs font-extrabold flex items-center gap-1">
-                        <span className={`w-2 h-2 rounded-full ${paymentMethod === term.id ? 'bg-indigo-550 animate-pulse' : 'bg-gray-300'}`} />
+                      <span className="text-xs font-bold flex items-center gap-1.5">
+                        <span className={`w-2.5 h-2.5 rounded-full ${paymentMethod === term.id ? 'bg-indigo-650 animate-pulse' : 'bg-gray-300 dark:bg-gray-700'}`} />
                         {term.label}
                       </span>
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 lines-clamp-2 leading-tight font-normal">{term.desc}</span>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 lines-clamp-1 leading-normal font-normal">{term.desc}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Terms Checkbox */}
-              <div className="flex items-start gap-3 p-4 bg-gray-50/50 dark:bg-slate-850/50 rounded-2xl border border-gray-100 dark:border-slate-800">
+              <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-slate-850/60 rounded-xl border border-gray-100 dark:border-slate-800 select-none">
                  <input 
                     type="checkbox" 
                     id="terms" 
-                    className="mt-1 w-4 h-4 accent-indigo-600 cursor-pointer"
+                    className="mt-1 w-4 h-4 accent-indigo-650 cursor-pointer rounded-md"
                     checked={agreedToTerms}
                     onChange={(e) => setAgreedToTerms(e.target.checked)}
                  />
                  <label htmlFor="terms" className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed cursor-pointer">
-                    I agree to the <span className="text-indigo-600 font-bold underline cursor-pointer">AFD HOUSE Terms of Service</span> and <span className="text-indigo-600 font-bold underline cursor-pointer">Refund Policy</span>. I understand that for digital payments, my data is processed by secured third-party gateways.
+                    I agree to the <span className="text-indigo-600 font-bold underline cursor-pointer">AFD HOUSE Terms of Service</span> and <span className="text-indigo-600 font-bold underline cursor-pointer">Refund Policy</span>. I understand that for digital payments, my connection is fully encrypted.
                  </label>
-              </div>
-
-              {/* Submit checkout triggers simulated safety */}
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  className="w-full bg-indigo-605 hover:bg-indigo-700 text-white font-extrabold text-sm py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/10 active:scale-[0.98] transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <ShieldCheck className="w-5 h-5 text-yellow-300" />
-                  <span>
-                    {paymentMethod === 'COD' 
-                      ? 'Confirm Cash on Delivery Order' 
-                      : `Proceed to Safe ${paymentMethod} sandbox Gateway`}
-                  </span>
-                </button>
               </div>
             </form>
           </div>
-
+ 
           {/* Checkout Right Side Sidebar Summary */}
-          <div className="space-y-5">
-            <h2 className="text-lg font-extrabold text-gray-900 dark:text-white tracking-tight flex items-center gap-1.5">
-              <FileText className="w-4.5 h-4.5 text-gray-400" />
-              <span>invoice statement</span>
-            </h2>
-
+          <div className="lg:col-span-5 space-y-6">
+            <div className="flex items-center gap-2">
+              <div className="bg-orange-100 dark:bg-slate-850 p-2.5 rounded-xl text-orange-600 dark:text-orange-400">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-gray-900 dark:text-white tracking-tight leading-none">
+                  Order Summary
+                </h2>
+                <p className="text-xs text-gray-400 mt-1">Review items before placing order</p>
+              </div>
+            </div>
+ 
             {/* Dynamic Items Panel */}
-            <div className="p-5 glass-card rounded-2xl border border-gray-150/40 dark:border-slate-800 space-y-4 shadow-sm">
-              <div className="divide-y divide-gray-100 dark:divide-slate-800 select-none overflow-y-auto max-h-56 pr-1 space-y-3">
-                {cart.map((item) => (
-                  <div key={item.product.id} className="pt-3 flex justify-between gap-2.5 text-xs text-gray-750 dark:text-gray-300">
-                    <div className="flex gap-2">
-                      <span className="font-extrabold text-indigo-600 bg-indigo-50 dark:bg-slate-850 px-2 rounded-md h-fit">
-                        {item.quantity}x
-                      </span>
-                      <div>
-                        <span className="font-semibold block text-gray-900 dark:text-white truncate max-w-40">{item.product.name}</span>
-                        <span className="text-[10px] text-gray-400 font-mono">SKU: {item.product.sku}</span>
+            <div className="p-6 bg-white dark:bg-slate-900 rounded-3xl border border-gray-150/45 dark:border-slate-800 shadow-sm space-y-5">
+              <div className="divide-y divide-gray-100 dark:divide-slate-850 overflow-y-auto max-h-[350px] pr-1.5 space-y-1 scrollbar-thin scrollbar-thumb-slate-800">
+                {cart.map((item) => {
+                  const unitPrice = item.product.salePrice || item.product.price;
+                  const totalItemPrice = unitPrice * item.quantity;
+                  return (
+                    <div key={item.product.id} className="pt-3 pb-3 flex gap-3.5 text-sm">
+                      {/* Product Image */}
+                      <div className="w-16 h-16 bg-gray-50 dark:bg-slate-850 rounded-xl overflow-hidden border border-gray-100 dark:border-slate-800 shrink-0 flex items-center justify-center">
+                        {item.product.images && item.product.images[0] ? (
+                          <img 
+                            src={item.product.images[0]} 
+                            alt={item.product.name} 
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <ShoppingBag className="w-5 h-5 text-gray-400" />
+                        )}
+                      </div>
+
+                      {/* Info structure */}
+                      <div className="flex-1 min-w-0 flex flex-col justify-between">
+                        <div>
+                          <span className="font-bold text-gray-900 dark:text-white block truncate text-[13px] leading-tight">
+                            {item.product.name}
+                          </span>
+                          <span className="text-[10px] text-gray-400 font-mono">SKU: {item.product.sku}</span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-xs text-gray-500 dark:text-gray-450">
+                            ৳{unitPrice} × {item.quantity}
+                          </span>
+                          <span className="font-mono font-bold text-gray-900 dark:text-gray-100 text-[13px]">
+                            ৳{totalItemPrice}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                    <span className="font-mono font-medium text-gray-800 dark:text-gray-100">৳{(item.product.salePrice || item.product.price) * item.quantity}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-
-              <div className="border-t border-gray-100 dark:border-slate-800 pt-3.5 space-y-2.5 text-xs">
-                <div className="flex justify-between text-gray-550 dark:text-gray-400">
+ 
+              <div className="border-t border-gray-100 dark:border-slate-850 pt-4 space-y-3 text-xs leading-none">
+                <div className="flex justify-between text-gray-500 dark:text-gray-400">
                   <span>Cart Items Subtotal</span>
-                  <span className="font-mono text-gray-850 dark:text-gray-100">৳{subtotal}</span>
+                  <span className="font-mono text-gray-850 dark:text-gray-100 font-semibold">৳{subtotal}</span>
                 </div>
                 {coupon && (
-                  <div className="flex justify-between text-orange-600 dark:text-orange-400 font-bold bg-orange-50/50 dark:bg-orange-950/20 px-2 py-1.5 rounded-lg border border-orange-100/30">
+                  <div className="flex justify-between text-orange-600 dark:text-orange-400 font-bold bg-orange-50/50 dark:bg-orange-950/20 px-3 py-2.5 rounded-xl border border-orange-100/30">
                     <span className="flex items-center gap-1">🏷 Promo "{coupon.code}" Applied</span>
                     <span className="font-mono">- ৳{discountValue}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-sm font-extrabold pt-2 border-t border-dashed border-gray-100 dark:border-slate-800 text-gray-905 dark:text-white">
-                  <span>Payable Total (BDT)</span>
-                  <span className="text-lg font-black text-indigo-600 dark:text-indigo-400 font-sans">৳{finalTotal}</span>
+                
+                <div className="flex justify-between text-sm font-extrabold pt-3.5 border-t border-dashed border-gray-150 dark:border-slate-850 text-gray-900 dark:text-white leading-none items-center">
+                  <span>Grand Total (BDT)</span>
+                  <span className="text-xl font-black text-indigo-650 dark:text-indigo-400 font-sans">৳{finalTotal}</span>
                 </div>
               </div>
-            </div>
 
+              {/* Giant Visible Place Order button on Order Summary */}
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  form="checkout-shipping-form"
+                  className="w-full bg-orange-500 hover:bg-orange-650 text-white font-extrabold text-base py-4 px-4 rounded-xl shadow-lg shadow-orange-500/10 hover:shadow-orange-500/20 active:scale-[0.98] transition-all text-center flex items-center justify-center gap-2 cursor-pointer duration-150"
+                >
+                  <ShieldCheck className="w-5 h-5 text-white" />
+                  <span>Place Order</span>
+                </button>
+              </div>
+            </div>
+ 
             {/* Simulated Live Gateway Data Logging Panel */}
             <div className="p-4 bg-slate-900 text-slate-300 rounded-2xl border border-slate-850 space-y-2.5 font-mono text-[11px] select-all shadow-md">
               <div className="flex items-center justify-between pb-1.5 border-b border-slate-850">

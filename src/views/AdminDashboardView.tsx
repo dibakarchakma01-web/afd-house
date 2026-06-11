@@ -13,6 +13,7 @@ import {
   Edit2, 
   Plus, 
   CheckCircle, 
+  AlertCircle,
   Clock, 
   AlertTriangle, 
   CheckSquare, 
@@ -91,6 +92,17 @@ export default function AdminDashboardView() {
 
   // Indicators mapping
   const [notificationSuccess, setNotificationSuccess] = useState<string | null>(null);
+  
+  // Custom interactive notification states
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4000);
+  };
 
   // Sync Carts real-time (Customers are provided by useAdmin)
   useEffect(() => {
@@ -326,8 +338,10 @@ export default function AdminDashboardView() {
       
       if (isEditingProduct) {
         setProducts(products.map((p) => (p.id === productId ? completeProduct : p)));
+        showToast(`Product "${completeProduct.name}" specs updated!`, 'success');
       } else {
         setProducts([...products, completeProduct]);
+        showToast(`Product "${completeProduct.name}" listed successfully!`, 'success');
       }
 
       // Reset Form fields
@@ -354,6 +368,7 @@ export default function AdminDashboardView() {
       setIsEditingProduct(false);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, `products/${productId}`);
+      showToast('Error saving product specifications!', 'error');
     }
   };
 
@@ -384,27 +399,33 @@ export default function AdminDashboardView() {
 
   const handleArchiveProduct = async (id: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'archived' ? 'active' : 'archived';
-    const confirmMsg = nextStatus === 'archived' 
-      ? 'Archive this product? It will be hidden from the storefront but preserved in the database.' 
-      : 'Unarchive this product? It will become visible in the storefront again.';
-    
-    if (!confirm(confirmMsg)) return;
-
     try {
       await updateDoc(doc(db, 'products', id), { status: nextStatus });
       setProducts(products.map(p => p.id === id ? { ...p, status: nextStatus as any } : p));
+      showToast(nextStatus === 'archived' ? 'Product archived successfully' : 'Product active again!', 'success');
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, `products/${id}`);
+      showToast('Error changing product status!', 'error');
     }
   };
 
-  const handleDeleteProduct = async (id: string) => {
-    if (!confirm('PERMANENTLY DELETE this product? This action is irreversible and will remove all associated data.')) return;
+  const handleDeleteProduct = (id: string) => {
+    setProductToDelete(id);
+  };
+
+  const confirmDeleteProduct = async () => {
+    if (!productToDelete) return;
+    const targetProduct = products.find(p => p.id === productToDelete);
+    const label = targetProduct ? targetProduct.name : 'Selected Product';
     try {
-      await deleteDoc(doc(db, 'products', id));
-      setProducts(products.filter((p) => p.id !== id));
+      await deleteDoc(doc(db, 'products', productToDelete));
+      setProducts(products.filter((p) => p.id !== productToDelete));
+      showToast(`Product "${label}" permanently deleted!`, 'success');
     } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, `products/${id}`);
+      handleFirestoreError(err, OperationType.DELETE, `products/${productToDelete}`);
+      showToast('Error permanently deleting product!', 'error');
+    } finally {
+      setProductToDelete(null);
     }
   };
 
@@ -912,6 +933,57 @@ export default function AdminDashboardView() {
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-slate-50/30 dark:bg-slate-950/20 font-sans -mx-4 sm:-mx-6 lg:-mx-8 -my-8 pb-0">
       
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-6 right-6 z-50 animate-bounce cursor-pointer max-w-md" onClick={() => setToast(null)}>
+          <div className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border text-sm font-bold duration-300 ${
+            toast.type === 'success' 
+              ? 'bg-emerald-50 dark:bg-emerald-950/85 border-emerald-100 dark:border-emerald-900/40 text-emerald-800 dark:text-emerald-300 font-sans' 
+              : 'bg-rose-50 dark:bg-rose-955 border-rose-100 dark:border-rose-900/40 text-rose-800 dark:text-rose-300 font-sans'
+          }`}>
+            {toast.type === 'success' ? (
+              <CheckCircle className="w-5 h-5 text-emerald-550 animate-pulse shrink-0" />
+            ) : (
+              <AlertCircle className="w-5 h-5 text-rose-550 animate-pulse shrink-0" />
+            )}
+            <span>{toast.message}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal before Deleting */}
+      {productToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-sm w-full border border-gray-150 dark:border-slate-800 shadow-2xl animate-scaleUp">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="bg-rose-100 dark:bg-rose-950/50 p-4 rounded-full text-rose-650 dark:text-rose-400">
+                <Trash2 className="w-8 h-8" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-lg font-black text-gray-900 dark:text-white leading-tight">Permanently Delete Product?</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  Are you absolutely sure you want to delete this product? All active cart matches and associated specifications will be removed. This action is irreversible.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 w-full pt-2">
+                <button
+                  onClick={() => setProductToDelete(null)}
+                  className="px-4 py-3 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-755 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-bold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteProduct}
+                  className="px-4 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-rose-600/10 cursor-pointer"
+                >
+                  Yes, Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div 
