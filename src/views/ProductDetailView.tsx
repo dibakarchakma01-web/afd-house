@@ -274,11 +274,7 @@ export default function ProductDetailView({
                 disabled={isOutOfStock}
                 onClick={() => {
                   onAddToCart(product);
-                  if (!user) {
-                    setView('auth');
-                  } else {
-                    setView('checkout');
-                  }
+                  setView('checkout');
                 }}
                 className="flex-[2] bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-150 disabled:dark:bg-slate-800 disabled:text-gray-400 text-white font-black text-sm px-6 py-4.5 rounded-2xl shadow-xl shadow-indigo-600/20 transition-all flex items-center justify-center cursor-pointer disabled:pointer-events-none tracking-wide"
               >

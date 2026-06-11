@@ -665,13 +665,13 @@ async function createStripePaymentIntent(orderId, bdtAmount) {
                   <input
                     type="tel"
                     required
-                    pattern="01[3-9][0-9]{8}"
+                    pattern="(?:\+?8801|01)[3-9][0-9]{8}"
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    onChange={(e) => setPhoneNumber(e.target.value.replace(/\s+/g, ''))}
                     placeholder="e.g. 01712345678"
                     className="w-full text-xs px-3.5 py-2.5 border-none bg-gray-50 dark:bg-slate-850 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500/50 transition-all font-mono"
                   />
-                  <span className="text-[10px] text-gray-400 block mt-1">Starting with 01</span>
+                  <span className="text-[10px] text-gray-400 block mt-1">Allows 01, +8801, or 8801 formats</span>
                 </div>
 
                 <div className="space-y-1.5">
