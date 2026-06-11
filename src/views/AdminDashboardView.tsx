@@ -46,6 +46,7 @@ import { Product, Category, Order, Coupon, Review, ChatThread, ChatMessage, Noti
 import { useAdmin } from '../contexts/AdminContext';
 import { useAuth } from '../contexts/AuthContext';
 import { AnalyticsDashboard } from '../components/Admin/AnalyticsDashboard';
+import { Logo } from '../components/Logo';
 
 interface AdminDashboardViewProps {
   onBackToShop?: () => void;
@@ -1013,14 +1014,7 @@ export default function AdminDashboardView({ onBackToShop, onLogout }: AdminDash
         <div className="p-6 h-full flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full border border-gray-150 dark:border-slate-800 overflow-hidden flex items-center justify-center bg-white shrink-0 shadow-sm">
-                <img 
-                  src="/logo.png?v=4" 
-                  alt="AFD House Logo" 
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
+              <Logo size="sm" className="dark:border-slate-800" />
               <div>
                 <h1 className="text-lg font-black text-indigo-600 dark:text-indigo-400 tracking-tighter leading-none">AFD HOUSE</h1>
                 <p className="text-[8px] text-gray-400 font-extrabold uppercase tracking-[0.2em] mt-0.5">Control Panel</p>

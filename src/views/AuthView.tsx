@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Lock, LogIn, AlertCircle, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { Logo } from '../components/Logo';
 
 interface AuthViewProps {
   onSuccess: (user: any) => void;
@@ -29,14 +30,7 @@ export default function AuthView({ onSuccess, onBack }: AuthViewProps) {
       <div className="space-y-6">
         {/* Header Branding */}
         <div className="flex justify-center">
-          <div className="w-16 h-16 rounded-full border border-gray-200 dark:border-slate-800 overflow-hidden shadow-md flex items-center justify-center bg-white">
-            <img 
-              src="/logo.png?v=4" 
-              alt="AFD House Logo" 
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-            />
-          </div>
+          <Logo size="lg" className="dark:border-slate-800" />
         </div>
 
         <div className="space-y-1.5">

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, ShoppingCart, Heart, User, Sun, Moon, LogOut, ShieldAlert, ChevronDown, Menu, X, Tag, Flame, Headphones, Truck } from 'lucide-react';
 import { Product, Category, SubCategory } from '../types';
+import { Logo } from './Logo';
 
 interface NavbarProps {
   currentView: string;
@@ -124,14 +125,7 @@ export default function Navbar({
               }}
               className="flex items-center gap-3"
             >
-              <div className="w-10 h-10 rounded-full border border-gray-150 overflow-hidden shadow-sm flex items-center justify-center bg-white shrink-0">
-                <img 
-                  src="/logo.png?v=4" 
-                  alt="AFD House Logo" 
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
+              <Logo size="md" />
               <div className="flex flex-col items-start leading-tight">
                 <span className="font-sans font-black text-xl sm:text-2xl tracking-tighter text-black">
                   AFD <span className="text-brand-green">HOUSE</span>
@@ -450,14 +444,7 @@ export default function Navbar({
           <div className="absolute top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl flex flex-col animate-slideInLeft">
             <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-brand-green">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full border border-white/20 overflow-hidden flex items-center justify-center bg-white shrink-0">
-                  <img 
-                    src="/logo.png?v=4" 
-                    alt="AFD House Logo" 
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
+                <Logo size="sm" className="border-white/20" />
                 <span className="font-sans font-black text-xl tracking-tighter text-white">
                   AFD HOUSE
                 </span>
