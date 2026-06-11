@@ -95,76 +95,20 @@ export default function HomeView({
   const [newArrivalItems, setNewArrivalItems] = useState<Product[]>([]);
   const [loadingSections, setLoadingSections] = useState(true);
 
-  // Fetch sections efficiently with index limits and local cache
+  // Derive sections directly from the real-time products prop
   useEffect(() => {
-    let isMounted = true;
+    const active = products.filter(p => p.status !== 'archived');
     
-    const fetchSections = async () => {
-      // Product Data Caching (Session storage)
-      const cachedFlash = sessionStorage.getItem('zm_home_flash');
-      const cachedFeatured = sessionStorage.getItem('zm_home_featured');
-      const cachedBest = sessionStorage.getItem('zm_home_bestseller');
-      const cachedNew = sessionStorage.getItem('zm_home_new');
+    const flash = active.filter(p => p.salePrice !== undefined && p.salePrice !== null && p.salePrice > 0).slice(0, 8);
+    const feat = active.filter(p => p.isFeatured).slice(0, 8);
+    const best = active.filter(p => p.isBestSeller).slice(0, 8);
+    const arrival = active.filter(p => p.isNewArrival).slice(0, 8);
 
-      if (cachedFlash && cachedFeatured && cachedBest && cachedNew) {
-        if (isMounted) {
-          setFlashSaleItems(JSON.parse(cachedFlash));
-          setFeaturedItems(JSON.parse(cachedFeatured));
-          setBestSellerItems(JSON.parse(cachedBest));
-          setNewArrivalItems(JSON.parse(cachedNew));
-          setLoadingSections(false);
-        }
-        return;
-      }
-
-      setLoadingSections(true);
-      try {
-        const qBase = collection(db, 'products');
-
-        // Query limits per section
-        // Note for indexes: Since 'salePrice > 0' needs index formatting that may not exist natively,
-        // we fallback safely. The other 3 single-field inequality indices automatically exist in Firestore.
-        const [flashSnap, featSnap, bestSnap, newSnap] = await Promise.all([
-          getDocs(query(qBase, where('status', '==', 'active'), where('salePrice', '!=', null), limit(8))).catch(() => null),
-          getDocs(query(qBase, where('status', '==', 'active'), where('isFeatured', '==', true), limit(8))).catch(() => null),
-          getDocs(query(qBase, where('status', '==', 'active'), where('isBestSeller', '==', true), limit(8))).catch(() => null),
-          getDocs(query(qBase, where('status', '==', 'active'), where('isNewArrival', '==', true), limit(8))).catch(() => null),
-        ]);
-
-        const mapSnap = (snap: any) => snap ? snap.docs.map((d: any) => ({ id: d.id, ...d.data() } as Product)) : [];
-        let flash = mapSnap(flashSnap);
-        let feat = mapSnap(featSnap);
-        let best = mapSnap(bestSnap);
-        let arrival = mapSnap(newSnap);
-
-        // Fallback filtering if index errors blocked fetches
-        if (!feat.length && !best.length) {
-           const activeProducts = products.filter(p => p.status !== 'archived');
-           flash = activeProducts.filter(p => !!p.salePrice).slice(0, 8);
-           feat = activeProducts.filter(p => p.isFeatured).slice(0, 8);
-           best = activeProducts.filter(p => p.isBestSeller).slice(0, 8);
-           arrival = activeProducts.filter(p => p.isNewArrival).slice(0, 8);
-        }
-
-        if (isMounted) {
-          setFlashSaleItems(flash);
-          setFeaturedItems(feat);
-          setBestSellerItems(best);
-          setNewArrivalItems(arrival);
-          setLoadingSections(false);
-          
-          sessionStorage.setItem('zm_home_flash', JSON.stringify(flash));
-          sessionStorage.setItem('zm_home_featured', JSON.stringify(feat));
-          sessionStorage.setItem('zm_home_bestseller', JSON.stringify(best));
-          sessionStorage.setItem('zm_home_new', JSON.stringify(arrival));
-        }
-      } catch (err) {
-        setLoadingSections(false);
-      }
-    };
-
-    fetchSections();
-    return () => { isMounted = false; };
+    setFlashSaleItems(flash);
+    setFeaturedItems(feat);
+    setBestSellerItems(best);
+    setNewArrivalItems(arrival);
+    setLoadingSections(false);
   }, [products]);
 
   // Filtering products for global search fallback
