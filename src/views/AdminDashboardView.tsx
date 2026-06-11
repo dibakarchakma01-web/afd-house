@@ -415,17 +415,22 @@ export default function AdminDashboardView() {
 
   const confirmDeleteProduct = async () => {
     if (!productToDelete) return;
-    const targetProduct = products.find(p => p.id === productToDelete);
-    const label = targetProduct ? targetProduct.name : 'Selected Product';
+    const idToDelete = productToDelete;
+    const previousProducts = [...products];
+
+    // Optimistically update UI immediately
+    setProducts(products.filter((p) => p.id !== idToDelete));
+    setProductToDelete(null);
+    showToast('Product deleted successfully', 'success');
+
     try {
-      await deleteDoc(doc(db, 'products', productToDelete));
-      setProducts(products.filter((p) => p.id !== productToDelete));
-      showToast(`Product "${label}" permanently deleted!`, 'success');
+      await deleteDoc(doc(db, 'products', idToDelete));
     } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, `products/${productToDelete}`);
+      console.error('Failed to delete product from database:', err);
+      // Rollback if delete fails
+      setProducts(previousProducts);
+      handleFirestoreError(err, OperationType.DELETE, `products/${idToDelete}`);
       showToast('Error permanently deleting product!', 'error');
-    } finally {
-      setProductToDelete(null);
     }
   };
 
@@ -956,27 +961,31 @@ export default function AdminDashboardView() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 max-w-sm w-full border border-gray-150 dark:border-slate-800 shadow-2xl animate-scaleUp">
             <div className="flex flex-col items-center text-center space-y-4">
-              <div className="bg-rose-100 dark:bg-rose-950/50 p-4 rounded-full text-rose-650 dark:text-rose-400">
+              <div className="bg-red-100 dark:bg-red-950/50 p-4 rounded-full text-red-650 dark:text-red-450 animate-pulse">
                 <Trash2 className="w-8 h-8" />
               </div>
-              <div className="space-y-1.5">
-                <h3 className="text-lg font-black text-gray-900 dark:text-white leading-tight">Permanently Delete Product?</h3>
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  Are you absolutely sure you want to delete this product? All active cart matches and associated specifications will be removed. This action is irreversible.
+              <div className="space-y-1.5 px-2">
+                <h3 className="text-md font-black text-gray-900 dark:text-white leading-snug">
+                  Are you sure you want to delete this product?
+                </h3>
+                <p className="text-[11px] text-gray-450 dark:text-gray-400 leading-normal">
+                  This action is irreversible and will permanently delete the product from the catalog.
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3 w-full pt-2">
                 <button
+                  type="button"
                   onClick={() => setProductToDelete(null)}
-                  className="px-4 py-3 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-755 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-bold transition cursor-pointer"
+                  className="px-4 py-3 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-755 text-gray-700 dark:text-gray-300 rounded-xl text-xs font-bold transition cursor-pointer border border-gray-200 dark:border-slate-700"
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={confirmDeleteProduct}
-                  className="px-4 py-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-rose-600/10 cursor-pointer"
+                  className="px-4 py-3 bg-red-650 hover:bg-red-750 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-red-600/15 cursor-pointer"
                 >
-                  Yes, Delete
+                  Delete
                 </button>
               </div>
             </div>
@@ -1664,7 +1673,7 @@ export default function AdminDashboardView() {
                     <th className="p-4">Department</th>
                     <th className="p-4">Price</th>
                     <th className="p-4">Stock level</th>
-                    <th className="p-4 text-center">Operation</th>
+                    <th className="p-4 text-center min-w-[140px]">Operation</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50 dark:divide-slate-850 font-medium text-gray-700 dark:text-gray-300">
@@ -1717,32 +1726,39 @@ export default function AdminDashboardView() {
                         </td>
 
                         {/* Edit and Trash bin triggers */}
-                        <td className="p-4 flex items-center justify-center gap-1.5 h-16 self-center">
-                          <button
-                            onClick={() => handleArchiveProduct(p.id, p.status)}
-                            className={`p-1.8 transition shadow-sm border rounded-lg ${
-                              p.status === 'archived'
-                                ? 'bg-amber-50 dark:bg-slate-800 text-amber-600 border-amber-100/20'
-                                : 'bg-slate-100 dark:bg-slate-800 text-gray-400 hover:text-amber-600 border-gray-100/10'
-                            }`}
-                            title={p.status === 'archived' ? "Unarchive Product" : "Soft Delete (Archive)"}
-                          >
-                            <Archive className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleEditProductClick(p)}
-                            className="p-1.8 bg-indigo-50 hover:bg-indigo-100 dark:bg-slate-800 dark:hover:bg-slate-755 text-indigo-600 dark:text-indigo-400 rounded-lg transition"
-                            title="Edit specs"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteProduct(p.id)}
-                            className="p-1.8 bg-rose-50 hover:bg-rose-100 dark:bg-slate-800 dark:hover:bg-slate-755 text-rose-600 rounded-lg transition"
-                            title="Delete item"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                        <td className="p-4 whitespace-nowrap text-center align-middle">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleArchiveProduct(p.id, p.status)}
+                              className={`p-1.5 transition shadow-sm border rounded-lg cursor-pointer ${
+                                p.status === 'archived'
+                                  ? 'bg-amber-50 dark:bg-amber-950/20 text-amber-600 border-amber-200 dark:border-amber-900/40'
+                                  : 'bg-gray-55 dark:bg-slate-800 text-gray-550 dark:text-gray-400 hover:text-amber-600 border-gray-200 dark:border-slate-705'
+                              }`}
+                              title={p.status === 'archived' ? "Unarchive Product" : "Archive Product"}
+                            >
+                              <Archive className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleEditProductClick(p)}
+                              className="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-650 dark:text-indigo-400 rounded-lg border border-indigo-100 dark:border-slate-705 transition cursor-pointer flex items-center gap-1 font-bold text-xs"
+                              title="Edit product"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteProduct(p.id)}
+                              className="px-2.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition cursor-pointer flex items-center gap-1 font-bold text-xs shadow-sm shadow-red-650/10"
+                              title="Delete product"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );

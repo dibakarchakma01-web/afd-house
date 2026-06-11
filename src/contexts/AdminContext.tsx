@@ -98,9 +98,9 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       console.log('AdminContext: Checking catalog status...');
       const prodSnap = await getDocs(collection(db, 'products'));
-      // If empty or has very few products (meaning we updated the catalog), re-seed
-      if (prodSnap.size < 40) {
-        console.log(`AdminContext: Catalog incomplete (${prodSnap.size}/50). Seeding/Updating initial data...`);
+      // Only seed if database is completely empty
+      if (prodSnap.empty) {
+        console.log('AdminContext: Catalog empty. Seeding initial data...');
         const batch = writeBatch(db);
         
         // Use a consistent seeding strategy
@@ -165,35 +165,27 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // 1. Public Subscriptions (Products, Categories, SubCategories, Brands, Reviews)
   useEffect(() => {
     const unsubProducts = productService.subscribeProducts((loadedProducts) => {
-      if (loadedProducts.length > 0) {
-        setProducts(loadedProducts.map(getProductWithSubcategory));
-      }
+      setProducts(loadedProducts.map(getProductWithSubcategory));
     });
 
     const unsubCategories = onSnapshot(collection(db, 'categories'), (snap) => {
-      if (!snap.empty) {
-        setCategories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category)));
-      }
+      setCategories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category)));
     });
 
     const unsubSubcategories = onSnapshot(collection(db, 'subcategories'), (snap) => {
       if (!snap.empty) {
         setSubcategories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as SubCategory)));
       } else {
-        setSubcategories(INITIAL_SUBCATEGORIES);
+        setSubcategories([]);
       }
     });
 
     const unsubBrands = onSnapshot(collection(db, 'brands'), (snap) => {
-      if (!snap.empty) {
-        setBrands(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Brand)));
-      }
+      setBrands(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Brand)));
     });
 
     const unsubReviews = onSnapshot(collection(db, 'reviews'), (snap) => {
-      if (!snap.empty) {
-        setReviews(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review)));
-      }
+      setReviews(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review)));
     });
 
     return () => {
