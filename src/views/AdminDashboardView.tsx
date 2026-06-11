@@ -36,7 +36,9 @@ import {
   Menu,
   X,
   PieChart,
-  ClipboardList
+  ClipboardList,
+  Store,
+  LogOut
 } from 'lucide-react';
 import { collection, query, getDocs, doc, setDoc, deleteDoc, updateDoc, onSnapshot, addDoc, getDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
@@ -45,7 +47,12 @@ import { useAdmin } from '../contexts/AdminContext';
 import { useAuth } from '../contexts/AuthContext';
 import { AnalyticsDashboard } from '../components/Admin/AnalyticsDashboard';
 
-export default function AdminDashboardView() {
+interface AdminDashboardViewProps {
+  onBackToShop?: () => void;
+  onLogout?: () => void;
+}
+
+export default function AdminDashboardView({ onBackToShop, onLogout }: AdminDashboardViewProps = {}) {
   const { 
     products, setProducts, 
     orders, setOrders, 
@@ -57,7 +64,7 @@ export default function AdminDashboardView() {
     customers: contextCustomers, 
     loading: adminLoading 
   } = useAdmin();
-  const { user, isAdmin, isStaff } = useAuth();
+  const { user, isAdmin, isStaff, logoutAdmin } = useAuth();
 
   // Navigation tabs state
   const [activeTab, setActiveTab] = useState<'dashboard' | 'analytics' | 'inventory' | 'products' | 'categories' | 'brands' | 'orders' | 'coupons' | 'reviews' | 'chats' | 'customers' | 'carts' | 'settings'>('dashboard');
@@ -1055,7 +1062,28 @@ export default function AdminDashboardView() {
             })}
           </nav>
 
-          <div className="pt-6 mt-6 border-t border-gray-100 dark:border-slate-805">
+          <div className="pt-6 mt-6 border-t border-gray-100 dark:border-slate-805 space-y-4">
+            <div className="flex flex-col gap-1.5">
+              {onBackToShop && (
+                <button
+                  type="button"
+                  onClick={onBackToShop}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider text-teal-600 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/20 transition-all border border-transparent hover:border-teal-100 dark:hover:border-teal-900/40"
+                >
+                  <Store className="w-4 h-4 text-teal-550" />
+                  <span>Back To Shop</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onLogout || logoutAdmin}
+                className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-955 transition-all border border-transparent hover:border-rose-100 dark:hover:border-rose-900/40"
+              >
+                <LogOut className="w-4 h-4 text-rose-550" />
+                <span>Sign Out</span>
+              </button>
+            </div>
+
             <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-800">
                <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-xs">
                  {user?.email?.charAt(0).toUpperCase()}

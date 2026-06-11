@@ -28,7 +28,7 @@ import { useAuth } from './contexts/AuthContext';
 import { useAdmin } from './contexts/AdminContext';
 
 export default function App() {
-  const { user, isAdmin, loginAdmin } = useAuth();
+  const { user, isAdmin, loginAdmin, logoutAdmin } = useAuth();
   const { products, setProducts, categories, setCategories, subcategories, setSubcategories, brands, setBrands, orders, setOrders, coupons, setCoupons, reviews, setReviews, loading: adminLoading } = useAdmin();
 
   // Navigation active view states: 'home' | 'detail' | 'cart' | 'checkout' | 'tracking' | 'profile' | 'admin' | 'auth'
@@ -540,12 +540,22 @@ export default function App() {
 
   const handleLogout = async () => {
     try {
+      logoutAdmin();
       await signOut(auth);
       setCart([]);
       localStorage.removeItem('zm_cart_cached');
       setView('home');
     } catch (err) {
       console.error('Logout error occurred:', err);
+    }
+  };
+
+  const handleAdminLogout = async () => {
+    try {
+      logoutAdmin();
+      await handleLogout();
+    } catch (err) {
+      console.error('Admin logout error occurred:', err);
     }
   };
 
@@ -762,7 +772,10 @@ export default function App() {
 
         {view === 'admin' && (
           <ProtectedRoute requireAdmin fallbackView={() => setView('auth')}>
-            <AdminDashboardView />
+            <AdminDashboardView 
+              onBackToShop={() => setView('home')} 
+              onLogout={handleAdminLogout} 
+            />
           </ProtectedRoute>
         )}
 
