@@ -84,13 +84,13 @@ const AdminContext = createContext<AdminContextType>({
 
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAdmin, isStaff, loading: authLoading } = useAuth();
-  const [products, setProducts] = useState<Product[]>(() => INITIAL_PRODUCTS.map(getProductWithSubcategory));
+  const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
-  const [subcategories, setSubcategories] = useState<SubCategory[]>(INITIAL_SUBCATEGORIES);
-  const [brands, setBrands] = useState<Brand[]>(INITIAL_BRANDS);
-  const [coupons, setCoupons] = useState<Coupon[]>(INITIAL_COUPONS);
-  const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -164,9 +164,19 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // 1. Public Subscriptions (Products, Categories, SubCategories, Brands, Reviews)
   useEffect(() => {
-    const unsubProducts = productService.subscribeProducts((loadedProducts) => {
-      setProducts(loadedProducts.map(getProductWithSubcategory));
-    });
+    const unsubProducts = onSnapshot(
+      collection(db, 'products'),
+      (snapshot) => {
+        const items = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        } as Product));
+        setProducts(items.map(getProductWithSubcategory));
+      },
+      (error) => {
+        console.error('Error fetching products list:', error);
+      }
+    );
 
     const unsubCategories = onSnapshot(collection(db, 'categories'), (snap) => {
       setCategories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category)));

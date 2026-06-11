@@ -167,6 +167,68 @@ export default function App() {
     return () => unsubCart();
   }, [user, products]);
 
+  // Reactive cleanup effect: clears stale caches and filters out deleted products from local states
+  useEffect(() => {
+    // Clear any legacy sessionStorage product caches
+    try {
+      sessionStorage.removeItem('zm_home_flash');
+      sessionStorage.removeItem('zm_home_featured');
+      sessionStorage.removeItem('zm_home_bestseller');
+      sessionStorage.removeItem('zm_home_new');
+    } catch (e) {
+      console.error('Failed to clear session storage:', e);
+    }
+
+    if (products.length === 0) return;
+
+    // Prune Cartesian local guest cart state
+    const cleanCart = cart.filter(item => products.some(p => p.id === item.product.id));
+    if (cleanCart.length !== cart.length) {
+      setCart(cleanCart);
+    }
+
+    // Prune Cart in Firestore if a product was deleted
+    if (user) {
+      const q = query(collection(db, 'cart'), where('userId', '==', user.uid));
+      getDocs(q).then(snap => {
+        const batch = writeBatch(db);
+        let hasChanges = false;
+        snap.forEach(docSnap => {
+          const data = docSnap.data();
+          if (!products.some(p => p.id === data.productId)) {
+            batch.delete(docSnap.ref);
+            hasChanges = true;
+          }
+        });
+        if (hasChanges) {
+          batch.commit().catch(err => console.error('Failed to prune database cart:', err));
+        }
+      }).catch(err => console.error('Failed to fetch user cart for pruning:', err));
+
+      const qWish = query(collection(db, 'wishlist'), where('userId', '==', user.uid));
+      getDocs(qWish).then(snap => {
+        const batch = writeBatch(db);
+        let hasChanges = false;
+        snap.forEach(docSnap => {
+          const data = docSnap.data();
+          if (!products.some(p => p.id === data.productId)) {
+            batch.delete(docSnap.ref);
+            hasChanges = true;
+          }
+        });
+        if (hasChanges) {
+          batch.commit().catch(err => console.error('Failed to prune database wishlist:', err));
+        }
+      }).catch(err => console.error('Failed to fetch user wishlist for pruning:', err));
+    }
+
+    // Prune wishlist identifiers state
+    const cleanWish = wishlistIds.filter(id => products.some(p => p.id === id));
+    if (cleanWish.length !== wishlistIds.length) {
+      setWishlistIds(cleanWish);
+    }
+  }, [products, user]);
+
   // Helper effect to merge guest cart into Firestore when logging in
   useEffect(() => {
     if (!user) return;
