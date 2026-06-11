@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Send, User, ChevronDown, Sparkles } from 'lucide-react';
+import { MessageSquare, X, Send, User, ChevronDown, Sparkles, MessageCircle, ExternalLink, LogIn } from 'lucide-react';
 import { collection, doc, addDoc, setDoc, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { ChatMessage } from '../types';
@@ -129,44 +129,40 @@ export default function SupportChat({ user, onLoginRequest }: SupportChatProps) 
 
   return (
     <div className="fixed bottom-6 right-6 z-50 font-sans">
-      {/* Floating Pill Trigger */}
+      {/* Floating Support & WhatsApp Trigger */}
       {!isOpen && (
         <button
           onClick={() => {
-            if (!user) {
-              onLoginRequest();
-            } else {
-              setIsOpen(true);
-            }
+            setIsOpen(true);
           }}
-          className="relative group bg-indigo-600 hover:bg-indigo-700 hover:scale-105 active:scale-95 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition-all cursor-pointer border border-indigo-500"
+          className="relative group bg-brand-green hover:bg-brand-green-dark hover:scale-105 active:scale-95 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition-all cursor-pointer border-2 border-white dark:border-zinc-900"
         >
-          <MessageSquare className="w-6 h-6" />
+          <MessageCircle className="w-6 h-6 animate-pulse" />
           {unread && (
-            <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold animate-bounce font-sans">
+            <span className="absolute -top-1 -right-1 bg-brand-orange text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold animate-bounce font-sans">
               1
             </span>
           )}
-          <span className="max-w-0 overflow-hidden group-hover:max-w-28 group-hover:ml-2 duration-350 transition-all text-xs font-bold uppercase tracking-wider whitespace-nowrap">
-            Live Support
+          <span className="max-w-0 overflow-hidden group-hover:max-w-28 group-hover:ml-2 duration-350 transition-all text-xs font-black uppercase tracking-widest whitespace-nowrap">
+            Support
           </span>
         </button>
       )}
 
-      {/* Floating Panel Box */}
+      {/* Floating Support Box Panel */}
       {isOpen && (
-        <div className="w-[320px] sm:w-[360px] h-[450px] glass-card rounded-2xl flex flex-col overflow-hidden animate-fadeIn font-sans">
-          {/* Box Header */}
-          <div className="bg-gradient-to-r from-indigo-950 via-indigo-900 to-orange-950/40 p-4 text-white flex items-center justify-between shadow border-b border-white/10">
+        <div className="w-[325px] sm:w-[365px] h-[480px] bg-white dark:bg-zinc-900 border border-orange-100/80 dark:border-zinc-800 rounded-3xl flex flex-col overflow-hidden shadow-2xl animate-fadeIn font-sans">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-brand-green to-emerald-600 p-4 text-white flex items-center justify-between shadow-xs">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">
-                <Sparkles className="w-4 h-4 text-orange-400 fill-orange-400 animate-pulse" />
+              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white">
+                <Sparkles className="w-4 h-4 text-yellow-300 fill-yellow-300 animate-pulse" />
               </div>
               <div>
-                <h4 className="text-sm font-bold leading-tight">AFD HOUSE Live Chat</h4>
-                <p className="text-[10px] text-indigo-200 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-ping" />
-                  <span>Operators Online</span>
+                <h4 className="text-sm font-black tracking-tight leading-tight">AFD HOUSE Helpdesk</h4>
+                <p className="text-[10px] text-emerald-100 flex items-center gap-1 font-bold">
+                  <span className="w-1.5 h-1.5 bg-green-300 rounded-full animate-ping" />
+                  <span>WhatsApp & Live Support Active</span>
                 </p>
               </div>
             </div>
@@ -178,64 +174,123 @@ export default function SupportChat({ user, onLoginRequest }: SupportChatProps) 
             </button>
           </div>
 
-          {/* Messages Stream */}
-          <div ref={scrollRef} className="flex-1 p-4 overflow-y-auto space-y-3 bg-white/20 dark:bg-slate-900/10">
-            {messages.length === 0 ? (
-              <div className="text-center py-12 px-6">
-                <div className="text-gray-400 dark:text-gray-655 text-4xl mb-2">💬</div>
-                <p className="text-xs font-semibold text-gray-500">Need shopping support?</p>
-                <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
-                  Ask regarding order delivery, sizing parameters, processing timelines, or active discounts. An operator will answer shortly.
-                </p>
-              </div>
-            ) : (
-              messages.map((msg, i) => {
-                const isAdmin = msg.senderRole === 'admin';
-                return (
-                  <div
-                    key={i}
-                    className={`flex gap-2 ${isAdmin ? 'justify-start' : 'justify-end'}`}
-                  >
-                    {isAdmin && (
-                      <div className="w-7 h-7 rounded-full bg-indigo-55/20 text-indigo-400 border border-indigo-500/20 flex items-center justify-center text-[10px] font-bold shrink-0 shadow-sm">
-                        ZM
-                      </div>
-                    )}
-                    <div
-                      className={`max-w-[75%] p-3 rounded-2xl text-xs leading-relaxed font-sans shadow-sm ${
-                        isAdmin
-                          ? 'bg-white dark:bg-gray-800 border border-gray-105 dark:border-gray-700/50 text-gray-800 dark:text-gray-200 rounded-tl-none'
-                          : 'bg-indigo-650 text-white rounded-br-none font-medium'
-                      }`}
-                    >
-                      <p className="whitespace-pre-line">{msg.message}</p>
-                      <p className={`text-[9px] mt-1 text-right leading-none ${isAdmin ? 'text-gray-400' : 'text-indigo-200'}`}>
-                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
+          <div className="flex-1 p-4 overflow-y-auto space-y-4 flex flex-col bg-[#FFFBF7] dark:bg-zinc-950/40">
+            {/* Direct WhatsApp Call-to-action */}
+            <div className="space-y-2">
+              <span className="block text-[10px] font-black uppercase tracking-widest text-[#15803d]/90 pl-1">
+                ⚡ Recommended Faster Contact:
+              </span>
+              <a
+                href="https://wa.me/8801533770313?text=Assalamu%20Alaikum%20AFD%20House,%20I'm%20interested%20in%20your%20products."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between gap-3 bg-[#25D366] hover:bg-[#20ba5a] text-white font-extrabold px-4 py-3 rounded-2xl transition-all shadow-md group border border-[#1ebd53] hover:scale-[1.01] duration-150"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                    <MessageCircle className="w-4.5 h-4.5 fill-white" />
                   </div>
-                );
-              })
-            )}
+                  <div className="text-left">
+                    <span className="block text-[9px] opacity-90 font-black uppercase tracking-wider leading-none">Instant Chat</span>
+                    <span className="block text-xs mt-1 leading-none font-bold">হোয়াটসঅ্যাপে সরাসরি চ্যাট করুন</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-medium text-emerald-100 uppercase tracking-wider hidden sm:inline">Connect</span>
+                  <ExternalLink className="w-3.5 h-3.5 opacity-90 group-hover:translate-x-0.5 duration-150 shrink-0" />
+                </div>
+              </a>
+            </div>
+
+            {/* In-App Live chat interface section */}
+            <hr className="border-orange-100/50 dark:border-zinc-800" />
+
+            <div className="flex-1 flex flex-col min-h-[170px]">
+              {user ? (
+                <>
+                  <span className="block text-[10px] font-black uppercase tracking-widest text-gray-400 pl-1 mb-2">
+                    💬 Website Live Session:
+                  </span>
+                  <div className="flex-1 overflow-y-auto space-y-2.5 max-h-[190px] pr-1">
+                    {messages.length === 0 ? (
+                      <div className="text-center py-6 px-4">
+                        <p className="text-xs font-bold text-gray-500">No active messages yet</p>
+                        <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">
+                          Ask us about retail orders, delivery schedules, sizing, or any bulk inquiry. Send a message below to start.
+                        </p>
+                      </div>
+                    ) : (
+                      messages.map((msg, i) => {
+                        const isAdmin = msg.senderRole === 'admin';
+                        return (
+                          <div
+                            key={i}
+                            className={`flex gap-2 ${isAdmin ? 'justify-start' : 'justify-end'}`}
+                          >
+                            {isAdmin && (
+                              <div className="w-6 h-6 rounded-full bg-brand-green/10 text-brand-green border border-brand-green/20 flex items-center justify-center text-[9px] font-black shrink-0 shadow-xs">
+                                AD
+                              </div>
+                            )}
+                            <div
+                              className={`max-w-[80%] p-2.5 rounded-2xl text-[11px] leading-relaxed font-sans shadow-xs ${
+                                isAdmin
+                                  ? 'bg-white dark:bg-zinc-800 border border-orange-100/40 dark:border-zinc-800 text-gray-800 dark:text-zinc-200 rounded-tl-none'
+                                  : 'bg-brand-green text-white rounded-br-none font-medium'
+                              }`}
+                            >
+                              <p className="whitespace-pre-line">{msg.message}</p>
+                              <p className={`text-[8px] mt-0.5 text-right leading-none ${isAdmin ? 'text-gray-400' : 'text-emerald-100'}`}>
+                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="my-auto flex flex-col items-center justify-center text-center p-5 bg-white dark:bg-zinc-900 border border-orange-100/40 dark:border-zinc-800/80 rounded-2xl shadow-xs">
+                  <User className="w-8 h-8 text-orange-400/85 mb-2" />
+                  <p className="text-xs font-black text-gray-900 dark:text-white">ওয়েবসাইট লাইভ চ্যাট সার্ভিস</p>
+                  <p className="text-[10px] text-gray-500 dark:text-zinc-400 mt-1.5 leading-relaxed max-w-xs">
+                    আমাদের ওয়েবসাইট লাইভ চ্যাট অপারেটরের সাথে যোগাযোগ বা আপনার মেসেজ রেকর্ড রাখতে লগইন করুন।
+                  </p>
+                  <button
+                    onClick={() => {
+                      setIsOpen(false);
+                      onLoginRequest();
+                    }}
+                    className="mt-3.5 inline-flex items-center gap-1.5 px-4 py-1.8 bg-brand-green hover:bg-brand-green-dark text-white text-xs font-black rounded-xl hover:scale-[1.03] active:scale-95 transition-all cursor-pointer shadow-sm"
+                  >
+                    <LogIn className="w-3.5 h-3.5" />
+                    <span>লগইন করুন / Sign In</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Messages Form */}
-          <form onSubmit={handleSendMessage} className="p-3 bg-white/40 dark:bg-slate-900/40 border-t border-white/15 flex gap-2 font-sans">
-            <input
-              type="text"
-              required
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Type your query and send..."
-              className="text-xs flex-1 px-3 py-2 border-none glass-input text-gray-950 dark:text-white rounded-xl focus:outline-none"
-            />
-            <button
-              type="submit"
-              className="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white p-2.2 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-600/10 duration-200 transition-all shrink-0 cursor-pointer"
-            >
-              <Send className="w-4 h-4" />
-            </button>
-          </form>
+          {/* Form input - active only if logged in */}
+          {user && (
+            <form onSubmit={handleSendMessage} className="p-3 bg-white dark:bg-zinc-900 border-t border-orange-100/50 dark:border-zinc-800 flex gap-2 font-sans">
+              <input
+                type="text"
+                required
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="Type your query and press send..."
+                className="text-xs flex-1 px-3 py-2 border border-orange-100/60 dark:border-zinc-800 text-gray-950 dark:text-white rounded-xl focus:outline-none focus:border-brand-green bg-orange-50/10"
+              />
+              <button
+                type="submit"
+                className="bg-brand-green hover:bg-brand-green-dark active:scale-95 text-white p-2 text-xs rounded-xl flex items-center justify-center shadow-lg shadow-brand-green/10 duration-200 transition-all shrink-0 cursor-pointer"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </form>
+          )}
         </div>
       )}
     </div>

@@ -34,7 +34,7 @@ export const ProductCard = React.memo(({
   const isStockLow = stock > 0 && stock <= 10;
 
   return (
-    <div className="group relative glass-card rounded-2xl overflow-hidden hover:-translate-y-1 transition-all duration-300 flex flex-col h-full font-sans">
+    <div className="group relative bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden hover:-translate-y-1 transition-all duration-300 flex flex-col h-full font-sans shadow-md border border-orange-100/60 dark:border-zinc-800/80">
       
       {/* Badge List Overlay */}
       <div className="absolute top-3 left-3 z-20 flex flex-col gap-1.5 pointer-events-none select-none">

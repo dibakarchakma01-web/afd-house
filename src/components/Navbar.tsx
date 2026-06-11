@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Search, ShoppingCart, Heart, User, Sun, Moon, LogOut, ShieldAlert, ChevronDown, Menu, X, Tag, Flame, Headphones, Truck } from 'lucide-react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Search, ShoppingCart, Heart, User, Sun, Moon, LogOut, ShieldAlert, ChevronDown, Menu, X, Tag, Flame, Headphones, Truck, Mic, Globe } from 'lucide-react';
 import { Product, Category, SubCategory } from '../types';
 import { Logo } from './Logo';
 
@@ -50,7 +50,58 @@ export default function Navbar({
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [megaMenuOpen, setMegaMenuOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+  
+  // Voice Search States
+  const [isRecording, setIsRecording] = useState(false);
+  const [speechLang, setSpeechLang] = useState<'en-US' | 'bn-BD'>('en-US');
+  const [speechSupported, setSpeechSupported] = useState(false);
+  
   const searchRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    // Check speech recognition support
+    if (typeof window !== 'undefined' && (('SpeechRecognition' in window) || ('webkitSpeechRecognition' in window))) {
+      setSpeechSupported(true);
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setLocalSearch(transcript);
+        setShowSuggestions(true);
+        setIsRecording(false);
+      };
+
+      recognitionRef.current.onerror = (event: any) => {
+        console.error("Speech recognition error", event.error);
+        setIsRecording(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsRecording(false);
+      };
+    }
+  }, []);
+
+  const toggleLanguage = () => {
+    setSpeechLang(prev => prev === 'en-US' ? 'bn-BD' : 'en-US');
+  };
+
+  const handleVoiceSearch = () => {
+    if (!speechSupported || !recognitionRef.current) return;
+    
+    if (isRecording) {
+      recognitionRef.current.stop();
+      setIsRecording(false);
+    } else {
+      recognitionRef.current.lang = speechLang;
+      recognitionRef.current.start();
+      setIsRecording(true);
+    }
+  };
 
   // Filter recommendations based on search text input
   const suggestions = localSearch.trim()
@@ -132,9 +183,31 @@ export default function Navbar({
                 onFocus={() => setShowSuggestions(true)}
                 className="flex-1 px-4 py-2 text-gray-900 text-sm focus:outline-none"
               />
-              <div className="h-6 w-px bg-gray-200 mx-2" />
+              <div className="h-6 w-px bg-gray-200 mx-1" />
+              {speechSupported && (
+                <div className="flex items-center gap-1 px-1">
+                  <button
+                    type="button"
+                    onClick={toggleLanguage}
+                    className="p-1.5 text-gray-500 hover:text-brand-green flex items-center gap-1 rounded-md hover:bg-brand-green/10 transition-colors"
+                    title={`Toggle Voice Language (Current: ${speechLang === 'en-US' ? 'English' : 'Bengali'})`}
+                  >
+                    <Globe className="w-4 h-4" />
+                    <span className="text-[10px] font-bold">{speechLang === 'en-US' ? 'EN' : 'BN'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleVoiceSearch}
+                    className={`p-1.5 rounded-full transition-colors ${isRecording ? 'bg-red-100 text-red-500 animate-pulse' : 'text-gray-500 hover:text-brand-green hover:bg-brand-green/10'}`}
+                    title={isRecording ? "Stop Recording" : "Voice Search"}
+                  >
+                    <Mic className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              <div className="h-6 w-px bg-gray-200 mx-1" />
               <select 
-                className="bg-transparent text-xs font-bold text-black px-3 py-2 focus:outline-none cursor-pointer border-none"
+                className="bg-transparent text-xs font-bold text-black px-2 py-2 focus:outline-none cursor-pointer border-none max-w-[120px]"
                 value={activeCategory}
                 onChange={(e) => setActiveCategory(e.target.value)}
               >
@@ -445,16 +518,35 @@ export default function Navbar({
               <form onSubmit={handleSearchSubmit} className="flex">
                 <input
                   type="text"
-                  placeholder="Search over 10,000+ items..."
+                  placeholder="Search..."
                   value={localSearch}
                   onChange={(e) => {
                     setLocalSearch(e.target.value);
                     setShowSuggestions(true);
                   }}
                   onFocus={() => setShowSuggestions(true)}
-                  className="w-full px-3 py-2 border border-blue-100 bg-blue-50/30 text-gray-900 text-sm rounded-l-xl focus:outline-none focus:ring-1 focus:ring-brand-green"
+                  className="w-full px-3 py-2 border-y border-l border-blue-100 bg-blue-50/30 text-gray-900 text-sm rounded-l-xl focus:outline-none focus:ring-1 focus:ring-brand-green"
                 />
-                <button type="submit" className="bg-brand-green text-white px-4 rounded-r-xl">
+                {speechSupported && (
+                  <div className="flex items-center gap-0.5 bg-blue-50/30 border-y border-blue-100 px-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={toggleLanguage}
+                      className="p-1.5 text-gray-500 hover:text-brand-green transition-colors flex items-center"
+                      title={`Voice Language: ${speechLang}`}
+                    >
+                      <span className="text-[10px] font-bold">{speechLang === 'en-US' ? 'EN' : 'BN'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleVoiceSearch}
+                      className={`p-1.5 ${isRecording ? 'text-red-500 animate-pulse' : 'text-gray-500 hover:text-brand-green'}`}
+                    >
+                      <Mic className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+                <button type="submit" className="bg-brand-green text-white px-4 rounded-r-xl shrink-0">
                   <Search className="w-4 h-4" />
                 </button>
               </form>
