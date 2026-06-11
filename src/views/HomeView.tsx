@@ -4,13 +4,16 @@ import { collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import HeroSlider from '../components/HeroSlider';
 import ProductCard from '../components/ProductCard';
-import { Product, Category } from '../types';
+import { Product, Category, SubCategory } from '../types';
 
 interface HomeViewProps {
   products: Product[];
   categories: Category[];
+  subcategories: SubCategory[];
   activeCategory: string;
   setActiveCategory: (slug: string) => void;
+  activeSubCategory: string;
+  setActiveSubCategory: (slug: string) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   onAddToCart: (product: Product) => void;
@@ -49,8 +52,11 @@ const ProductSkeleton = () => (
 export default function HomeView({
   products,
   categories,
+  subcategories,
   activeCategory,
   setActiveCategory,
+  activeSubCategory,
+  setActiveSubCategory,
   searchQuery,
   setSearchQuery,
   onAddToCart,

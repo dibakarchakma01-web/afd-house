@@ -1,11 +1,44 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { productService } from '../services/productService';
 import { orderService } from '../services/orderService';
-import { Product, Order, Category, Coupon, Review, Brand } from '../types';
+import { Product, Order, Category, SubCategory, Coupon, Review, Brand } from '../types';
 import { collection, onSnapshot, getDocs, writeBatch, doc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { INITIAL_CATEGORIES, INITIAL_PRODUCTS, INITIAL_COUPONS, INITIAL_REVIEWS, INITIAL_BRANDS } from '../data';
+import { INITIAL_CATEGORIES, INITIAL_SUBCATEGORIES, INITIAL_PRODUCTS, INITIAL_COUPONS, INITIAL_REVIEWS, INITIAL_BRANDS } from '../data';
 import { useAuth } from './AuthContext.tsx';
+
+export const getProductWithSubcategory = (p: Product): Product => {
+  let subcategory = p.subcategory || '';
+  if (!subcategory) {
+    const nameLower = p.name.toLowerCase();
+    if (nameLower.includes('headphone') || nameLower.includes('earbud')) {
+      subcategory = 'headphones';
+    } else if (nameLower.includes('watch') || nameLower.includes('band')) {
+      subcategory = 'smart-watches';
+    } else if (nameLower.includes('suit') || nameLower.includes('blazer')) {
+      subcategory = 'suits-blazers';
+    } else if (nameLower.includes('denim') || nameLower.includes('jacket')) {
+      subcategory = 'denim-jackets';
+    } else if (nameLower.includes('t-shirt') || nameLower.includes('tee')) {
+      subcategory = 't-shirts';
+    } else if (nameLower.includes('polo')) {
+      subcategory = 'polo-shirts';
+    } else if (nameLower.includes('saree') || nameLower.includes('sari')) {
+      subcategory = 'saree';
+    } else if (nameLower.includes('top') || nameLower.includes('kurti')) {
+      subcategory = 'tops-kurtis';
+    } else if (nameLower.includes('toy') || nameLower.includes('game')) {
+      subcategory = 'toys';
+    } else if (nameLower.includes('bedsheet') || nameLower.includes('pillow')) {
+      subcategory = 'bedsheets';
+    } else if (nameLower.includes('gym') || nameLower.includes('dumbell')) {
+      subcategory = 'gym';
+    } else if (nameLower.includes('perfume') || nameLower.includes('scent')) {
+      subcategory = 'perfumes';
+    }
+  }
+  return { ...p, subcategory };
+};
 
 interface AdminContextType {
   products: Product[];
@@ -14,6 +47,8 @@ interface AdminContextType {
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   categories: Category[];
   setCategories: React.Dispatch<React.SetStateAction<Category[]>>;
+  subcategories: SubCategory[];
+  setSubcategories: React.Dispatch<React.SetStateAction<SubCategory[]>>;
   brands: Brand[];
   setBrands: React.Dispatch<React.SetStateAction<Brand[]>>;
   coupons: Coupon[];
@@ -33,6 +68,8 @@ const AdminContext = createContext<AdminContextType>({
   setOrders: () => {},
   categories: [],
   setCategories: () => {},
+  subcategories: [],
+  setSubcategories: () => {},
   brands: [],
   setBrands: () => {},
   coupons: [],
@@ -47,9 +84,10 @@ const AdminContext = createContext<AdminContextType>({
 
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAdmin, isStaff, loading: authLoading } = useAuth();
-  const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>(() => INITIAL_PRODUCTS.map(getProductWithSubcategory));
   const [orders, setOrders] = useState<Order[]>([]);
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const [subcategories, setSubcategories] = useState<SubCategory[]>(INITIAL_SUBCATEGORIES);
   const [brands, setBrands] = useState<Brand[]>(INITIAL_BRANDS);
   const [coupons, setCoupons] = useState<Coupon[]>(INITIAL_COUPONS);
   const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
@@ -67,8 +105,9 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         
         // Use a consistent seeding strategy
         INITIAL_CATEGORIES.forEach(c => batch.set(doc(db, 'categories', c.id), c, { merge: true }));
+        INITIAL_SUBCATEGORIES.forEach(sc => batch.set(doc(db, 'subcategories', sc.id), sc, { merge: true }));
         INITIAL_BRANDS.forEach(b => batch.set(doc(db, 'brands', b.id), b, { merge: true }));
-        INITIAL_PRODUCTS.forEach(p => batch.set(doc(db, 'products', p.id), p, { merge: true }));
+        INITIAL_PRODUCTS.map(getProductWithSubcategory).forEach(p => batch.set(doc(db, 'products', p.id), p, { merge: true }));
         INITIAL_COUPONS.forEach(c => batch.set(doc(db, 'coupons', c.code), c, { merge: true }));
         INITIAL_REVIEWS.forEach(r => batch.set(doc(db, 'reviews', r.id), r, { merge: true }));
         
@@ -123,17 +162,25 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // 1. Public Subscriptions (Products, Categories, Brands, Reviews)
+  // 1. Public Subscriptions (Products, Categories, SubCategories, Brands, Reviews)
   useEffect(() => {
     const unsubProducts = productService.subscribeProducts((loadedProducts) => {
       if (loadedProducts.length > 0) {
-        setProducts(loadedProducts);
+        setProducts(loadedProducts.map(getProductWithSubcategory));
       }
     });
 
     const unsubCategories = onSnapshot(collection(db, 'categories'), (snap) => {
       if (!snap.empty) {
         setCategories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Category)));
+      }
+    });
+
+    const unsubSubcategories = onSnapshot(collection(db, 'subcategories'), (snap) => {
+      if (!snap.empty) {
+        setSubcategories(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as SubCategory)));
+      } else {
+        setSubcategories(INITIAL_SUBCATEGORIES);
       }
     });
 
@@ -152,6 +199,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => {
       unsubProducts();
       unsubCategories();
+      unsubSubcategories();
       unsubBrands();
       unsubReviews();
     };
@@ -219,6 +267,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       products, setProducts, 
       orders, setOrders, 
       categories, setCategories, 
+      subcategories, setSubcategories,
       brands, setBrands, 
       coupons, setCoupons, 
       reviews, setReviews, 

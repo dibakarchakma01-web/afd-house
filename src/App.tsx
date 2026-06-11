@@ -29,7 +29,7 @@ import { useAdmin } from './contexts/AdminContext';
 
 export default function App() {
   const { user, isAdmin } = useAuth();
-  const { products, setProducts, categories, setCategories, brands, setBrands, orders, setOrders, coupons, setCoupons, reviews, setReviews } = useAdmin();
+  const { products, setProducts, categories, setCategories, subcategories, setSubcategories, brands, setBrands, orders, setOrders, coupons, setCoupons, reviews, setReviews } = useAdmin();
 
   // Navigation active view states: 'home' | 'detail' | 'cart' | 'checkout' | 'tracking' | 'profile' | 'admin' | 'auth'
   const [view, setView] = useState<string>('home');
@@ -40,6 +40,7 @@ export default function App() {
   // Shopping active states
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [activeSubCategory, setActiveSubCategory] = useState('all');
   const [listingTag, setListingTag] = useState<string>('all');
   const [cart, setCart] = useState<CartItem[]>(() => {
     const cached = localStorage.getItem('zm_cart_cached');
@@ -476,8 +477,11 @@ export default function App() {
         toggleTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
         products={products}
         categories={categories}
+        subcategories={subcategories}
         activeCategory={activeCategory}
         setActiveCategory={setActiveCategory}
+        activeSubCategory={activeSubCategory}
+        setActiveSubCategory={setActiveSubCategory}
         setSearchQuery={setSearchQuery}
       />
 
@@ -487,8 +491,11 @@ export default function App() {
           <HomeView
             products={products}
             categories={categories}
+            subcategories={subcategories}
             activeCategory={activeCategory}
             setActiveCategory={setActiveCategory}
+            activeSubCategory={activeSubCategory}
+            setActiveSubCategory={setActiveSubCategory}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             onAddToCart={handleAddToCart}
@@ -509,9 +516,12 @@ export default function App() {
           <ProductListingView
             products={products}
             categories={categories}
+            subcategories={subcategories}
             brands={brands}
             activeCategory={activeCategory}
             setActiveCategory={setActiveCategory}
+            activeSubCategory={activeSubCategory}
+            setActiveSubCategory={setActiveSubCategory}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             onAddToCart={handleAddToCart}

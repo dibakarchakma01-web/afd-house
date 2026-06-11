@@ -18,15 +18,18 @@ import {
   Tag,
   ArrowRightLeft
 } from 'lucide-react';
-import { Product, Category, Brand } from '../types';
+import { Product, Category, SubCategory, Brand } from '../types';
 import ProductCard from '../components/ProductCard';
 
 interface ProductListingViewProps {
   products: Product[];
   categories: Category[];
+  subcategories: SubCategory[];
   brands: Brand[];
   activeCategory: string;
   setActiveCategory: (slug: string) => void;
+  activeSubCategory: string;
+  setActiveSubCategory: (slug: string) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   onAddToCart: (product: Product) => void;
@@ -43,9 +46,12 @@ interface ProductListingViewProps {
 export default function ProductListingView({
   products,
   categories,
+  subcategories,
   brands,
   activeCategory,
   setActiveCategory,
+  activeSubCategory,
+  setActiveSubCategory,
   searchQuery,
   setSearchQuery,
   onAddToCart,
@@ -124,6 +130,9 @@ export default function ProductListingView({
       // Category match check
       const matchesCategory = activeCategory === 'all' || p.category === activeCategory;
 
+      // Subcategory match check
+      const matchesSubCategory = activeSubCategory === 'all' || p.subcategory === activeSubCategory;
+
       // Brand selection check
       const matchesBrand = selectedBrand === 'all' || p.brand?.toLowerCase() === selectedBrand.toLowerCase();
 
@@ -152,9 +161,9 @@ export default function ProductListingView({
       if (selectedTag === 'new') matchesTag = !!p.isNewArrival;
       if (selectedTag === 'bestseller') matchesTag = !!p.isBestSeller;
 
-      return matchesCategory && matchesBrand && matchesSearch && matchesPrice && matchesRating && matchesStock && matchesTag;
+      return matchesCategory && matchesSubCategory && matchesBrand && matchesSearch && matchesPrice && matchesRating && matchesStock && matchesTag;
     });
-  }, [products, activeCategory, selectedBrand, searchQuery, priceRange, customMinPrice, customMaxPrice, selectedRating, showInStockOnly, selectedTag]);
+  }, [products, activeCategory, activeSubCategory, selectedBrand, searchQuery, priceRange, customMinPrice, customMaxPrice, selectedRating, showInStockOnly, selectedTag]);
 
   // Order sorting criteria implementation
   const sortedProducts = useMemo(() => {
@@ -191,6 +200,7 @@ export default function ProductListingView({
   // Quick reset for all filters parameters
   const handleClearAllFilters = () => {
     setActiveCategory('all');
+    setActiveSubCategory('all');
     setSelectedBrand('all');
     setSearchQuery('');
     setLocalSearch('');
@@ -218,9 +228,24 @@ export default function ProductListingView({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-150 dark:border-slate-800 pb-5">
         <div>
           <div className="flex items-center gap-2 text-xs text-gray-400 font-medium">
-            <button onClick={onBackToHome} className="hover:text-indigo-600 cursor-pointer">AFD HOUSE</button>
+            <button onClick={onBackToHome} className="hover:text-indigo-600 cursor-pointer font-bold">AFD HOUSE</button>
             <span>/</span>
-            <span className="text-gray-900 dark:text-gray-200 capitalize">{currentCategoryLabel}</span>
+            <button 
+              onClick={() => {
+                setActiveSubCategory('all');
+              }}
+              className="hover:text-indigo-600 capitalize cursor-pointer font-bold"
+            >
+              {currentCategoryLabel}
+            </button>
+            {activeSubCategory !== 'all' && (
+              <>
+                <span>/</span>
+                <span className="text-gray-900 dark:text-gray-200 capitalize font-bold">
+                  {subcategories.find(sc => sc.slug === activeSubCategory)?.name || activeSubCategory}
+                </span>
+              </>
+            )}
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight mt-1">
             {currentCategoryLabel} Catalog
@@ -435,19 +460,58 @@ export default function ProductListingView({
               </button>
               {categories.map((cat) => {
                 const totalItemCount = products.filter((p) => p.category === cat.slug).length;
+                const isSelected = activeCategory === cat.slug;
+                const subcats = subcategories.filter(sc => sc.categoryId === cat.slug);
                 return (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveCategory(cat.slug)}
-                    className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
-                      activeCategory === cat.slug 
-                        ? 'bg-indigo-600 text-white font-bold' 
-                        : 'text-gray-650 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                    }`}
-                  >
-                    <span className="capitalize">{cat.name}</span>
-                    <span className="text-[10px] opacity-75">{totalItemCount}</span>
-                  </button>
+                  <div key={cat.id} className="flex flex-col gap-1 text-xs">
+                    <button
+                      onClick={() => {
+                        setActiveCategory(cat.slug);
+                        setActiveSubCategory('all');
+                      }}
+                      className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
+                        isSelected 
+                          ? 'bg-indigo-600 text-white font-bold' 
+                          : 'text-gray-650 dark:text-gray-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                      }`}
+                    >
+                      <span className="capitalize">{cat.name}</span>
+                      <span className="text-[10px] opacity-75">{totalItemCount}</span>
+                    </button>
+
+                    {/* Indented Subcategories when Category is selected */}
+                    {isSelected && subcats.length > 0 && (
+                      <div className="pl-3.5 pr-1 py-1 space-y-1 bg-slate-50/50 dark:bg-slate-800/20 rounded-lg flex flex-col border border-gray-100/50 dark:border-slate-800/50 mt-0.5 sm:mt-1">
+                        <button
+                          onClick={() => setActiveSubCategory('all')}
+                          className={`text-left py-1 px-1.5 rounded text-[11px] font-bold ${
+                            activeSubCategory === 'all' 
+                              ? 'text-indigo-600 font-extrabold' 
+                              : 'text-gray-500 hover:text-indigo-600 dark:text-gray-450'
+                          }`}
+                        >
+                          All in {cat.name}
+                        </button>
+                        {subcats.map(sub => {
+                          const subItemCount = products.filter(p => p.category === cat.slug && p.subcategory === sub.slug).length;
+                          return (
+                            <button
+                              key={sub.id}
+                              onClick={() => setActiveSubCategory(sub.slug)}
+                              className={`text-left py-1 px-1.5 rounded text-[11px] flex justify-between items-center ${
+                                activeSubCategory === sub.slug 
+                                  ? 'text-indigo-600 font-extrabold bg-indigo-50/10 hover:text-indigo-650' 
+                                  : 'text-gray-500 hover:text-indigo-600 dark:text-gray-450'
+                              }`}
+                            >
+                              <span className="truncate">{sub.name}</span>
+                              <span className="text-[9px] opacity-60">({subItemCount})</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>

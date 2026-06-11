@@ -1,4 +1,39 @@
-import { Product, Category, Coupon, Review, Brand } from './types';
+import { Product, Category, SubCategory, Coupon, Review, Brand } from './types';
+
+export const INITIAL_SUBCATEGORIES: SubCategory[] = [
+  // Men's Fashion
+  { id: 'sub-m-1', categoryId: 'mens-fashion', name: "T-Shirts", slug: 't-shirts' },
+  { id: 'sub-m-2', categoryId: 'mens-fashion', name: "Suits & Blazers", slug: 'suits-blazers' },
+  { id: 'sub-m-3', categoryId: 'mens-fashion', name: "Denim Jackets", slug: 'denim-jackets' },
+  { id: 'sub-m-4', categoryId: 'mens-fashion', name: "Polo Shirts", slug: 'polo-shirts' },
+
+  // Women's Fashion
+  { id: 'sub-w-1', categoryId: 'womens-fashion', name: "Saree", slug: 'saree' },
+  { id: 'sub-w-2', categoryId: 'womens-fashion', name: "Tops & Kurtis", slug: 'tops-kurtis' },
+  { id: 'sub-w-3', categoryId: 'womens-fashion', name: "Handbags", slug: 'handbags' },
+  { id: 'sub-w-4', categoryId: 'womens-fashion', name: "Jewelry", slug: 'jewelry' },
+
+  // Kids Zone
+  { id: 'sub-k-1', categoryId: 'kids-zone', name: "Toys", slug: 'toys' },
+  { id: 'sub-k-2', categoryId: 'kids-zone', name: "Clothing", slug: 'clothing' },
+
+  // Electronics
+  { id: 'sub-e-1', categoryId: 'electronics-gadgets', name: "Smart Watches", slug: 'smart-watches' },
+  { id: 'sub-e-2', categoryId: 'electronics-gadgets', name: "Headphones", slug: 'headphones' },
+  { id: 'sub-e-3', categoryId: 'electronics-gadgets', name: "Speakers", slug: 'speakers' },
+
+  // Home & Living
+  { id: 'sub-h-1', categoryId: 'home-living', name: "Bedsheets & Pillowcases", slug: 'bedsheets' },
+  { id: 'sub-h-2', categoryId: 'home-living', name: "Lighting", slug: 'lighting' },
+
+  // Sports & Fitness
+  { id: 'sub-s-1', categoryId: 'sports-fitness', name: "Gym Equipment", slug: 'gym' },
+  { id: 'sub-s-2', categoryId: 'sports-fitness', name: "Sportswear", slug: 'sportswear' },
+
+  // Beauty & Care
+  { id: 'sub-b-1', categoryId: 'beauty-care', name: "Moisturizers", slug: 'moisturizers' },
+  { id: 'sub-b-2', categoryId: 'beauty-care', name: "Perfumes", slug: 'perfumes' }
+];
 
 export const INITIAL_CATEGORIES: Category[] = [
   { id: '1', name: "Men's Fashion", slug: 'mens-fashion', image: 'https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?auto=format&fit=crop&q=80&w=400' },

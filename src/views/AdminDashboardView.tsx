@@ -49,6 +49,7 @@ export default function AdminDashboardView() {
     products, setProducts, 
     orders, setOrders, 
     categories, setCategories, 
+    subcategories, setSubcategories,
     brands, setBrands, 
     coupons, setCoupons, 
     reviews, setReviews, 
@@ -143,6 +144,7 @@ export default function AdminDashboardView() {
     salePrice: '',
     stock: '',
     category: '',
+    subcategory: '',
     brand: '',
     sku: '',
     imageURL: '',
@@ -158,6 +160,13 @@ export default function AdminDashboardView() {
   const [catName, setCatName] = useState('');
   const [catSlug, setCatSlug] = useState('');
   const [catImage, setCatImage] = useState('');
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+
+  // Subcategories local form states
+  const [subCatName, setSubCatName] = useState('');
+  const [subCatSlug, setSubCatSlug] = useState('');
+  const [subCatCategoryId, setSubCatCategoryId] = useState('');
+  const [editingSubCategoryId, setEditingSubCategoryId] = useState<string | null>(null);
 
   // BRANDS CRUD local state variables
   const [bName, setBName] = useState('');
@@ -296,6 +305,7 @@ export default function AdminDashboardView() {
       discountPrice: productForm.salePrice ? Number(productForm.price) - Number(productForm.salePrice) : 0,
       stock: Number(productForm.stock),
       category: productForm.category,
+      subcategory: productForm.subcategory || '',
       brand: productForm.brand || 'Unbranded',
       sku: calculatedSku,
       images: [productForm.imageURL],
@@ -331,6 +341,7 @@ export default function AdminDashboardView() {
         salePrice: '',
         stock: '',
         category: '',
+        subcategory: '',
         brand: '',
         sku: '',
         imageURL: '',
@@ -357,6 +368,7 @@ export default function AdminDashboardView() {
       salePrice: p.salePrice ? String(p.salePrice) : '',
       stock: String(p.stock),
       category: p.category,
+      subcategory: p.subcategory || '',
       brand: p.brand || '',
       sku: p.sku || '',
       imageURL: p.images[0] || '',
@@ -402,21 +414,103 @@ export default function AdminDashboardView() {
     if (!catName || !catSlug || !catImage) return;
 
     const cSlug = slugify(catSlug);
+    const catId = editingCategoryId || 'cat-' + Math.floor(100 + Math.random() * 900);
     const newCat: Category = {
-      id: 'cat-' + Math.floor(100 + Math.random() * 900),
+      id: catId,
       name: catName,
       slug: cSlug,
       image: catImage,
     };
 
     try {
-      await setDoc(doc(db, 'categories', newCat.id), newCat);
-      setCategories([...categories, newCat]);
+      await setDoc(doc(db, 'categories', catId), newCat);
+      if (editingCategoryId) {
+        setCategories(categories.map(c => c.id === catId ? newCat : c));
+        setEditingCategoryId(null);
+      } else {
+        setCategories([...categories, newCat]);
+      }
       setCatName('');
       setCatSlug('');
       setCatImage('');
     } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, `categories/${newCat.id}`);
+      handleFirestoreError(err, OperationType.WRITE, `categories/${catId}`);
+    }
+  };
+
+  const handleEditCategory = (cat: Category) => {
+    setEditingCategoryId(cat.id);
+    setCatName(cat.name);
+    setCatSlug(cat.slug);
+    setCatImage(cat.image);
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this Category? All nested subcategories will lose their parent relation.')) return;
+    try {
+      await deleteDoc(doc(db, 'categories', id));
+      setCategories(categories.filter(c => c.id !== id));
+      if (editingCategoryId === id) {
+        setEditingCategoryId(null);
+        setCatName('');
+        setCatSlug('');
+        setCatImage('');
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `categories/${id}`);
+    }
+  };
+
+  // SUBCATEGORIES SUBMISSION & CRUD MUTATIONS
+  const handleSubCategorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!subCatName || !subCatSlug || !subCatCategoryId) return;
+
+    const sSlug = slugify(subCatSlug);
+    const subId = editingSubCategoryId || 'sub-' + Math.floor(100 + Math.random() * 900);
+    const newSub = {
+      id: subId,
+      name: subCatName,
+      slug: sSlug,
+      categoryId: subCatCategoryId
+    };
+
+    try {
+      await setDoc(doc(db, 'subcategories', subId), newSub);
+      if (editingSubCategoryId) {
+        setSubcategories(subcategories.map(s => s.id === subId ? newSub : s));
+        setEditingSubCategoryId(null);
+      } else {
+        setSubcategories([...subcategories, newSub]);
+      }
+      setSubCatName('');
+      setSubCatSlug('');
+      setSubCatCategoryId('');
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, `subcategories/${subId}`);
+    }
+  };
+
+  const handleEditSubCategory = (sub: any) => {
+    setEditingSubCategoryId(sub.id);
+    setSubCatName(sub.name);
+    setSubCatSlug(sub.slug);
+    setSubCatCategoryId(sub.categoryId);
+  };
+
+  const handleDeleteSubCategory = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this Subcategory?')) return;
+    try {
+      await deleteDoc(doc(db, 'subcategories', id));
+      setSubcategories(subcategories.filter(s => s.id !== id));
+      if (editingSubCategoryId === id) {
+        setEditingSubCategoryId(null);
+        setSubCatName('');
+        setSubCatSlug('');
+        setSubCatCategoryId('');
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `subcategories/${id}`);
     }
   };
 
@@ -1309,18 +1403,33 @@ export default function AdminDashboardView() {
               </div>
 
               {/* Dep and Brand picker lists */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Category</label>
                   <select
                     value={productForm.category}
                     required
-                    onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                    onChange={(e) => setProductForm({ ...productForm, category: e.target.value, subcategory: '' })}
                     className="w-full text-xs px-2.5 py-2.5 rounded-xl border border-gray-205 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 cursor-pointer capitalize font-semibold"
                   >
                     <option value="">-- Choose Category --</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.slug}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Sub Category</label>
+                  <select
+                    value={productForm.subcategory}
+                    onChange={(e) => setProductForm({ ...productForm, subcategory: e.target.value })}
+                    className="w-full text-xs px-2.5 py-2.5 rounded-xl border border-gray-205 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 cursor-pointer capitalize font-semibold"
+                    disabled={!productForm.category}
+                  >
+                    <option value="">-- Choose Subcategory (Optional) --</option>
+                    {subcategories.filter(sc => sc.categoryId === productForm.category).map((s) => (
+                      <option key={s.id} value={s.slug}>{s.name}</option>
                     ))}
                   </select>
                 </div>
@@ -1576,78 +1685,233 @@ export default function AdminDashboardView() {
       {/* ---- Tab 3: Categories Division ---- */}
       {activeTab === 'categories' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fadeIn">
-          {/* Add Category Form */}
-          <div className="lg:col-span-1 space-y-4">
-            <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">➕ Create Department Category</h3>
+          {/* Left Column Forms */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Category Form */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <span>{editingCategoryId ? '⚙️ Edit Category' : '➕ Create Department Category'}</span>
+              </h3>
 
-            <form onSubmit={handleCategorySubmit} className="p-5 border border-gray-150 dark:border-slate-805 bg-white dark:bg-slate-900 rounded-2xl shadow-sm space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Category Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Kids Outerwear"
-                  value={catName}
-                  onChange={(e) => setCatName(e.target.value)}
-                  className="w-full text-xs px-3 py-2.5 bg-slate-50 dark:bg-slate-800 text-gray-905 border border-gray-205 dark:border-slate-700 rounded-xl"
-                />
-              </div>
+              <form onSubmit={handleCategorySubmit} className="p-5 border border-gray-150 dark:border-slate-850 bg-white dark:bg-slate-900 rounded-2xl shadow-sm space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Category Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Kids Outerwear"
+                    value={catName}
+                    onChange={(e) => setCatName(e.target.value)}
+                    className="w-full text-xs px-3 py-2.5 bg-slate-50 dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-205 dark:border-slate-700 rounded-xl"
+                  />
+                </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Category Slug</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. kids-outerwear"
-                  value={catSlug}
-                  onChange={(e) => setCatSlug(e.target.value)}
-                  className="w-full text-xs px-3 py-2.5 bg-slate-50 dark:bg-slate-800 text-gray-950 dark:text-white border border-gray-205 dark:border-slate-700 rounded-xl font-mono"
-                />
-              </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Category Slug</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. kids-outerwear"
+                    value={catSlug}
+                    onChange={(e) => setCatSlug(e.target.value)}
+                    className="w-full text-xs px-3 py-2.5 bg-slate-50 dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-205 dark:border-slate-700 rounded-xl font-mono"
+                  />
+                </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Category Image URL</label>
-                <input
-                  type="url"
-                  required
-                  placeholder="https://images.unsplash.com/photo-..."
-                  value={catImage}
-                  onChange={(e) => setCatImage(e.target.value)}
-                  className="w-full text-xs px-3 py-2.5 bg-slate-50 dark:bg-slate-800 text-gray-950 border border-gray-205 dark:border-slate-700 rounded-xl"
-                />
-              </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Category Image URL</label>
+                  <input
+                    type="url"
+                    required
+                    placeholder="https://images.unsplash.com/photo-..."
+                    value={catImage}
+                    onChange={(e) => setCatImage(e.target.value)}
+                    className="w-full text-xs px-3 py-2.5 bg-slate-50 dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-205 dark:border-slate-700 rounded-xl"
+                  />
+                </div>
 
-              <button
-                type="submit"
-                className="w-full bg-indigo-605 hover:bg-indigo-705 text-white font-extrabold py-3.2 rounded-xl text-xs uppercase"
-              >
-                Insert Channel Slug
-              </button>
-            </form>
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-3 rounded-xl text-xs uppercase cursor-pointer"
+                  >
+                    {editingCategoryId ? 'Update Category' : 'Create Category'}
+                  </button>
+                  {editingCategoryId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingCategoryId(null);
+                        setCatName('');
+                        setCatSlug('');
+                        setCatImage('');
+                      }}
+                      className="bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 font-extrabold px-4 rounded-xl text-xs uppercase"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
+
+            {/* Sub Category Form */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+                <span>{editingSubCategoryId ? '⚙️ Edit Sub Category' : '➕ Create Sub Category'}</span>
+              </h3>
+
+              <form onSubmit={handleSubCategorySubmit} className="p-5 border border-gray-150 dark:border-slate-850 bg-white dark:bg-slate-900 rounded-2xl shadow-sm space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block">Parent Category</label>
+                  <select
+                    required
+                    value={subCatCategoryId}
+                    onChange={(e) => setSubCatCategoryId(e.target.value)}
+                    className="w-full text-xs px-2.5 py-2.5 rounded-xl border border-gray-205 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 cursor-pointer capitalize font-semibold dark:text-white"
+                  >
+                    <option value="">-- Choose Parent --</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.slug}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Sub Category Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Graphic T-Shirts"
+                    value={subCatName}
+                    onChange={(e) => setSubCatName(e.target.value)}
+                    className="w-full text-xs px-3 py-2.5 bg-slate-50 dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-205 dark:border-slate-700 rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">Sub Category Slug</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. graphic-t-shirts"
+                    value={subCatSlug}
+                    onChange={(e) => setSubCatSlug(e.target.value)}
+                    className="w-full text-xs px-3 py-2.5 bg-slate-50 dark:bg-slate-800 text-gray-900 dark:text-white border border-gray-205 dark:border-slate-700 rounded-xl font-mono"
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-3 rounded-xl text-xs uppercase cursor-pointer"
+                  >
+                    {editingSubCategoryId ? 'Update Sub Category' : 'Create Sub Category'}
+                  </button>
+                  {editingSubCategoryId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingSubCategoryId(null);
+                        setSubCatName('');
+                        setSubCatSlug('');
+                        setSubCatCategoryId('');
+                      }}
+                      className="bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300 font-extrabold px-4 rounded-xl text-xs uppercase"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </form>
+            </div>
           </div>
 
-          {/* Collection lists */}
+          {/* Department tree overview columns */}
           <div className="lg:col-span-2 space-y-4">
-            <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">Catalog Categories ({categories.length})</h3>
+            <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">Nested Catalog Architecture</h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {categories.map((cat) => (
-                <div
-                  key={cat.id}
-                  className="p-4 border border-gray-150 dark:border-slate-855 bg-white dark:bg-slate-900/60 rounded-2xl flex items-center gap-4 shadow-sm"
-                >
-                  <img
-                    src={cat.image}
-                    alt={cat.name}
-                    referrerPolicy="no-referrer"
-                    className="w-14 h-14 object-cover rounded-xl border border-gray-100 shrink-0"
-                  />
-                  <div>
-                    <h4 className="text-sm font-extrabold text-gray-900 dark:text-white capitalize">{cat.name}</h4>
-                    <p className="text-[10px] text-gray-400 font-mono mt-0.5">slug: {cat.slug}</p>
+            <div className="space-y-4">
+              {categories.map((cat) => {
+                const subcats = subcategories.filter((s) => s.categoryId === cat.slug);
+                return (
+                  <div
+                    key={cat.id}
+                    className="p-5 border border-gray-150 dark:border-slate-800/80 bg-white dark:bg-slate-900/60 rounded-2xl space-y-4 shadow-sm animate-fadeIn"
+                  >
+                    <div className="flex items-center justify-between gap-4 border-b border-gray-50 dark:border-slate-800 pb-3">
+                      <div className="flex items-center gap-4">
+                        <img
+                          src={cat.image}
+                          alt={cat.name}
+                          referrerPolicy="no-referrer"
+                          className="w-12 h-12 object-cover rounded-xl border border-gray-100 shrink-0"
+                        />
+                        <div>
+                          <h4 className="text-sm font-extrabold text-gray-900 dark:text-white capitalize">{cat.name}</h4>
+                          <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-mono">slug: {cat.slug}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleEditCategory(cat)}
+                          className="p-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 rounded-lg transition cursor-pointer"
+                          title="Edit category info"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCategory(cat.id)}
+                          className="p-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-rose-600 rounded-lg transition cursor-pointer"
+                          title="Delete category"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Subcategories under this category */}
+                    <div className="pl-4 border-l-2 border-slate-100 dark:border-slate-800 space-y-2">
+                      <p className="text-[10px] text-gray-400 uppercase font-black tracking-wider">Subcategories ({subcats.length})</p>
+                      
+                      {subcats.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {subcats.map((sub) => (
+                            <div 
+                              key={sub.id} 
+                              className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl flex items-center justify-between gap-2 border border-slate-100 dark:border-slate-800"
+                            >
+                              <div>
+                                <span className="text-xs font-bold text-gray-800 dark:text-white">{sub.name}</span>
+                                <span className="text-[9px] text-gray-400 block font-mono">/s/{sub.slug}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => handleEditSubCategory(sub)}
+                                  className="p-1 hover:bg-indigo-50 dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 rounded transition cursor-pointer"
+                                  title="Edit Subcategory"
+                                >
+                                  <Edit2 className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteSubCategory(sub.id)}
+                                  className="p-1 hover:bg-rose-50 dark:hover:bg-slate-700 text-rose-605 rounded transition cursor-pointer"
+                                  title="Delete Subcategory"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-400 italic">No subcategories defined yet. Create one on the left!</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

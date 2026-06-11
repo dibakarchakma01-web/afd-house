@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Search, ShoppingCart, Heart, User, Sun, Moon, LogOut, ShieldAlert, ChevronDown, Menu, X, Tag, Flame, Headphones, Truck } from 'lucide-react';
-import { Product, Category } from '../types';
+import { Product, Category, SubCategory } from '../types';
 
 interface NavbarProps {
   currentView: string;
@@ -15,8 +15,11 @@ interface NavbarProps {
   toggleTheme: () => void;
   products: Product[];
   categories: Category[];
+  subcategories: SubCategory[];
   activeCategory: string;
   setActiveCategory: (cat: string) => void;
+  activeSubCategory: string;
+  setActiveSubCategory: (sub: string) => void;
   setSearchQuery: (query: string) => void;
 }
 
@@ -33,14 +36,19 @@ export default function Navbar({
   toggleTheme,
   products,
   categories,
+  subcategories,
   activeCategory,
   setActiveCategory,
+  activeSubCategory,
+  setActiveSubCategory,
   setSearchQuery,
 }: NavbarProps) {
   const [localSearch, setLocalSearch] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [megaMenuOpen, setMegaMenuOpen] = useState(false);
+  const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const searchRef = useRef<HTMLDivElement>(null);
 
   // Filter recommendations based on search text input
@@ -267,20 +275,135 @@ export default function Navbar({
       </div>
 
       {/* Main Nav Sub Bar */}
-      <div className="hidden md:block border-t border-gray-100">
+      <div 
+        className="hidden md:block border-t border-gray-100 relative"
+        onMouseLeave={() => setMegaMenuOpen(false)}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-8 h-10">
-          <button className="h-full bg-brand-green text-white px-5 flex items-center gap-3 text-xs font-black uppercase tracking-tight hover:bg-brand-green-dark transition-colors shrink-0">
-             <Menu className="w-4 h-4" />
-             <span>All Categories</span>
-          </button>
+          <div 
+            className="h-full relative select-none"
+            onMouseEnter={() => {
+              setMegaMenuOpen(true);
+              if (categories.length > 0 && !hoveredCategory) {
+                setHoveredCategory(categories[0].slug);
+              }
+            }}
+          >
+            <button className="h-full bg-brand-green text-white px-5 flex items-center gap-3 text-xs font-black uppercase tracking-tight hover:bg-brand-green-dark transition-colors shrink-0">
+               <Menu className="w-4 h-4" />
+               <span>All Categories</span>
+               <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${megaMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
 
-          <nav className="flex items-center gap-6 h-full font-black text-[11.5px] uppercase tracking-wide text-black pb-0.5">
+          {/* Mega Menu Overlay */}
+          {megaMenuOpen && (
+            <div 
+              className="absolute left-4 top-10 w-[850px] bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 shadow-2xl rounded-b-2xl z-50 flex overflow-hidden text-sm"
+              style={{ minHeight: '360px' }}
+              onMouseEnter={() => setMegaMenuOpen(true)}
+            >
+              {/* Left Side: Categories List */}
+              <div className="w-1/3 bg-slate-50 dark:bg-slate-950 border-r border-gray-100 dark:border-slate-800 py-3 shrink-0 flex flex-col overflow-y-auto">
+                {categories.map((cat, idx) => {
+                  const isHovered = hoveredCategory === cat.slug || (!hoveredCategory && idx === 0);
+                  return (
+                    <button
+                      key={cat.id}
+                      onMouseEnter={() => setHoveredCategory(cat.slug)}
+                      onClick={() => {
+                        setActiveCategory(cat.slug);
+                        setActiveSubCategory('all');
+                        setView('listing');
+                        setMegaMenuOpen(false);
+                      }}
+                      className={`w-full text-left px-5 py-3 flex items-center justify-between font-black transition-colors ${
+                        isHovered 
+                          ? 'bg-white dark:bg-slate-900 text-brand-green border-l-4 border-brand-green pl-4' 
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-slate-100/50 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <span className="truncate">{cat.name}</span>
+                      <span className="text-gray-400 text-xs">➔</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Right Side: Subcategories Grid */}
+              <div className="flex-1 p-6 bg-white dark:bg-slate-900 overflow-y-auto flex flex-col justify-between">
+                <div>
+                  {(() => {
+                    const currentCategorySlug = hoveredCategory || categories[0]?.slug || '';
+                    const activeCatObj = categories.find(c => c.slug === currentCategorySlug);
+                    const subcats = subcategories.filter(sc => sc.categoryId === currentCategorySlug);
+                    return (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-2">
+                          <h4 className="font-extrabold text-base text-gray-900 dark:text-white capitalize">
+                            {activeCatObj ? activeCatObj.name : 'Category'} Collections
+                          </h4>
+                          <button
+                            onClick={() => {
+                              if (activeCatObj) {
+                                setActiveCategory(activeCatObj.slug);
+                                setActiveSubCategory('all');
+                                setView('listing');
+                                setMegaMenuOpen(false);
+                              }
+                            }}
+                            className="text-xs text-brand-green hover:underline font-bold"
+                          >
+                            View All Products →
+                          </button>
+                        </div>
+
+                        {subcats.length === 0 ? (
+                          <div className="py-12 text-center text-xs text-gray-400">
+                            No subcategories found. Manage them in the Admin Panel!
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-3">
+                            {subcats.map((sub) => (
+                              <button
+                                key={sub.id}
+                                onClick={() => {
+                                  if (activeCatObj) {
+                                    setActiveCategory(activeCatObj.slug);
+                                    setActiveSubCategory(sub.slug);
+                                    setView('listing');
+                                    setMegaMenuOpen(false);
+                                  }
+                                }}
+                                className="text-left py-2 px-3 rounded-lg border border-gray-100 dark:border-slate-800 hover:border-brand-green/40 hover:bg-brand-green/5 dark:hover:bg-brand-green/5 transition-all flex items-center justify-between font-bold text-gray-800 dark:text-gray-200 group text-xs"
+                              >
+                                <span>{sub.name}</span>
+                                <span className="text-gray-300 group-hover:text-brand-green transition-colors text-[10px]">➔</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Promotional banner or footer */}
+                <div className="mt-8 pt-4 border-t border-gray-100 dark:border-slate-850 flex items-center justify-between text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                  <span>Authentic Bangladeshi E-Commerce</span>
+                  <span className="text-brand-green font-black">AFD HOUSE Premium selection</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <nav className="flex items-center gap-6 h-full font-black text-[11.5px] uppercase tracking-wide text-black dark:text-white pb-0.5">
              {[
                { view: 'home', label: 'Home' },
                { slug: 'mens-fashion', label: "Men's Fashion" },
                { slug: 'womens-fashion', label: "Women's Fashion" },
                { slug: 'kids-zone', label: 'Kids Zone' },
-               { slug: 'gadgets', label: 'Electronics & Gadgets' },
+               { slug: 'electronics-gadgets', label: 'Electronics & Gadgets' },
                { view: 'contact', label: 'Contact' }
              ].map((link, idx) => {
                const isActive = link.view ? currentView === link.view : activeCategory === link.slug;
@@ -290,12 +413,14 @@ export default function Navbar({
                    onClick={() => {
                      if (link.slug) {
                        setActiveCategory(link.slug);
+                       setActiveSubCategory('all');
                        setView('listing');
                      } else if (link.view === 'contact') {
                         document.querySelector('footer')?.scrollIntoView({ behavior: 'smooth' });
                      } else {
                        setView(link.view!);
                        setActiveCategory('all');
+                       setActiveSubCategory('all');
                      }
                    }}
                    className={`h-full flex items-center border-b-2 transition-all px-1 ${isActive ? 'text-brand-green border-brand-green' : 'border-transparent hover:text-brand-green'}`}
@@ -427,6 +552,7 @@ export default function Navbar({
                   <button
                     onClick={() => {
                       setActiveCategory('all');
+                      setActiveSubCategory('all');
                       setView('listing');
                       setMobileMenuOpen(false);
                     }}
@@ -434,19 +560,67 @@ export default function Navbar({
                   >
                     All Collections
                   </button>
-                  {categories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => {
-                        setActiveCategory(cat.slug);
-                        setView('listing');
-                        setMobileMenuOpen(false);
-                      }}
-                      className={`text-xs text-left p-3 rounded-xl font-black w-full transition-all ${activeCategory === cat.slug && currentView === 'listing' ? 'bg-brand-green/10 text-brand-green font-black' : 'text-black hover:bg-gray-100'}`}
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
+                  {categories.map((cat) => {
+                    const isSelected = activeCategory === cat.slug;
+                    const subcats = subcategories.filter(sc => sc.categoryId === cat.slug);
+                    return (
+                      <div key={cat.id} className="space-y-1">
+                        <button
+                          onClick={() => {
+                            if (activeCategory === cat.slug) {
+                              setActiveCategory(cat.slug);
+                              setActiveSubCategory('all');
+                              setView('listing');
+                              setMobileMenuOpen(false);
+                            } else {
+                              setActiveCategory(cat.slug);
+                            }
+                          }}
+                          className={`text-xs text-left p-3 rounded-xl flex items-center justify-between font-black w-full transition-all ${
+                            isSelected && currentView === 'listing' 
+                              ? 'bg-brand-green/10 text-brand-green font-black' 
+                              : 'text-black hover:bg-gray-100'
+                          }`}
+                        >
+                          <span>{cat.name}</span>
+                          {subcats.length > 0 && (
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isSelected ? 'rotate-180 text-brand-green' : 'text-gray-400'}`} />
+                          )}
+                        </button>
+
+                        {isSelected && subcats.length > 0 && (
+                          <div className="pl-4 pr-1 py-1 space-y-1 bg-gray-50/50 dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800">
+                            <button
+                              onClick={() => {
+                                setActiveCategory(cat.slug);
+                                setActiveSubCategory('all');
+                                setView('listing');
+                                setMobileMenuOpen(false);
+                              }}
+                              className={`w-full text-left p-2 rounded-lg text-[11px] font-black hover:text-brand-green ${activeSubCategory === 'all' ? 'text-brand-green' : 'text-gray-500'}`}
+                            >
+                              All in {cat.name}
+                            </button>
+                            {subcats.map((sub) => (
+                              <button
+                                key={sub.id}
+                                onClick={() => {
+                                  setActiveCategory(cat.slug);
+                                  setActiveSubCategory(sub.slug);
+                                  setView('listing');
+                                  setMobileMenuOpen(false);
+                                }}
+                                className={`w-full text-left p-2 rounded-lg text-[11px] font-black hover:text-brand-green flex items-center justify-between ${activeSubCategory === sub.slug ? 'text-brand-green bg-brand-green/5' : 'text-gray-500'}`}
+                              >
+                                <span>{sub.name}</span>
+                                <span className="text-[10px] opacity-60">➔</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

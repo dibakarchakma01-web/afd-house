@@ -16,6 +16,7 @@ export interface Product {
   description: string;
   shortDescription?: string;
   category: string; // e.g. "mens-fashion"
+  subcategory?: string; // e.g. "t-shirts"
   brand: string; // e.g. "ZunoMaster"
   sku: string;
   price: number;
@@ -54,6 +55,13 @@ export interface Category {
   name: string;
   slug: string;
   image: string;
+}
+
+export interface SubCategory {
+  id: string;
+  categoryId: string; // References Category.id or Category.slug
+  name: string;
+  slug: string;
 }
 
 export interface Review {
