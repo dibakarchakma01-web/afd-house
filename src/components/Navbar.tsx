@@ -122,11 +122,15 @@ export default function Navbar({
                 setSearchQuery('');
                 setView('home');
               }}
-              className="flex items-center gap-2"
+              className="flex items-center gap-3"
             >
-              <div className="relative">
-                <ShoppingCart className="w-9 h-9 text-brand-green fill-brand-green" />
-                <span className="absolute inset-0 flex items-center justify-center text-white font-black text-lg mb-0.5">A</span>
+              <div className="w-10 h-10 rounded-full border border-gray-150 overflow-hidden shadow-sm flex items-center justify-center bg-white shrink-0">
+                <img 
+                  src="/logo.png" 
+                  alt="AFD House Logo" 
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
               </div>
               <div className="flex flex-col items-start leading-tight">
                 <span className="font-sans font-black text-xl sm:text-2xl tracking-tighter text-black">
@@ -445,10 +449,14 @@ export default function Navbar({
           {/* Sidebar drawer content */}
           <div className="absolute top-0 left-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl flex flex-col animate-slideInLeft">
             <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-brand-green">
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <ShoppingCart className="w-8 h-8 text-white fill-white" />
-                  <span className="absolute inset-0 flex items-center justify-center text-brand-green font-black text-base mb-0.5">A</span>
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full border border-white/20 overflow-hidden flex items-center justify-center bg-white shrink-0">
+                  <img 
+                    src="/logo.png" 
+                    alt="AFD House Logo" 
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
                 </div>
                 <span className="font-sans font-black text-xl tracking-tighter text-white">
                   AFD HOUSE

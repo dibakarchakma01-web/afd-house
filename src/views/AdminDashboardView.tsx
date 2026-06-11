@@ -1012,9 +1012,19 @@ export default function AdminDashboardView({ onBackToShop, onLogout }: AdminDash
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-gray-150 dark:border-slate-800 transition-transform duration-300 md:sticky md:top-0 md:h-screen md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full shadow-none'}`}>
         <div className="p-6 h-full flex flex-col">
           <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-xl font-black text-indigo-600 dark:text-indigo-400 tracking-tighter">AFD HOUSE</h1>
-              <p className="text-[9px] text-gray-400 font-extrabold uppercase tracking-[0.2em] mt-0.5">Control Panel</p>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full border border-gray-150 dark:border-slate-800 overflow-hidden flex items-center justify-center bg-white shrink-0 shadow-sm">
+                <img 
+                  src="/logo.png" 
+                  alt="AFD House Logo" 
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              <div>
+                <h1 className="text-lg font-black text-indigo-600 dark:text-indigo-400 tracking-tighter leading-none">AFD HOUSE</h1>
+                <p className="text-[8px] text-gray-400 font-extrabold uppercase tracking-[0.2em] mt-0.5">Control Panel</p>
+              </div>
             </div>
             <button 
               onClick={() => setIsSidebarOpen(false)}

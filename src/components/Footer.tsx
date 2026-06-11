@@ -28,8 +28,15 @@ export default function Footer({ setView, categories, setActiveCategory }: Foote
           
           {/* Logo, About, and Social Handles */}
           <div className="flex flex-col gap-6">
-            <div className="flex items-center gap-2">
-              <ShoppingCart className="w-8 h-8 text-brand-green fill-brand-green" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full border border-gray-150 overflow-hidden shadow-sm flex items-center justify-center bg-white shrink-0">
+                <img 
+                  src="/logo.png" 
+                  alt="AFD House Logo" 
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
               <span className="font-black text-gray-900 text-2xl tracking-tighter">AFD <span className="text-brand-green">HOUSE</span></span>
             </div>
             <p className="text-xs leading-relaxed text-black font-semibold">

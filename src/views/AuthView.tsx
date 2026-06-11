@@ -29,8 +29,13 @@ export default function AuthView({ onSuccess, onBack }: AuthViewProps) {
       <div className="space-y-6">
         {/* Header Branding */}
         <div className="flex justify-center">
-          <div className="p-3.5 bg-indigo-50 dark:bg-slate-850 text-indigo-600 rounded-2xl">
-            <Lock className="w-8 h-8" />
+          <div className="w-16 h-16 rounded-full border border-gray-200 dark:border-slate-800 overflow-hidden shadow-md flex items-center justify-center bg-white">
+            <img 
+              src="/logo.png" 
+              alt="AFD House Logo" 
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+            />
           </div>
         </div>
 
