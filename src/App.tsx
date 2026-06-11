@@ -541,9 +541,20 @@ export default function App() {
   const handleLogout = async () => {
     try {
       logoutAdmin();
-      await signOut(auth);
+      signOut(auth).catch((err) => console.warn('Firebase signout details:', err));
       setCart([]);
       localStorage.removeItem('zm_cart_cached');
+      
+      // Clean up URL query parameters and hash so they don't auto-login on reload
+      try {
+        if (typeof window !== 'undefined') {
+          const cleanUrl = window.location.origin + window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+      } catch (e) {
+        console.error("Backdoor URL clean failed:", e);
+      }
+      
       setView('home');
     } catch (err) {
       console.error('Logout error occurred:', err);
@@ -552,6 +563,7 @@ export default function App() {
 
   const handleAdminLogout = async () => {
     try {
+      setView('home'); // Set view to home first to bypass ProtectedRoute re-rendering loop
       logoutAdmin();
       await handleLogout();
     } catch (err) {
