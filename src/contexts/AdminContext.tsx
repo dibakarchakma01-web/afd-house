@@ -84,13 +84,13 @@ const AdminContext = createContext<AdminContextType>({
 
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAdmin, isStaff, loading: authLoading } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(() => INITIAL_PRODUCTS.map(getProductWithSubcategory));
   const [orders, setOrders] = useState<Order[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
-  const [brands, setBrands] = useState<Brand[]>([]);
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const [subcategories, setSubcategories] = useState<SubCategory[]>(INITIAL_SUBCATEGORIES);
+  const [brands, setBrands] = useState<Brand[]>(INITIAL_BRANDS);
+  const [coupons, setCoupons] = useState<Coupon[]>(INITIAL_COUPONS);
+  const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -205,6 +205,11 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       unsubBrands();
       unsubReviews();
     };
+  }, []);
+
+  // Auto-seed database with catalog data on startup if Firestore is empty
+  useEffect(() => {
+    seedDatabase();
   }, []);
 
   // 2. Sensitive Subscriptions (Orders, Customers, Coupons) & Seeding

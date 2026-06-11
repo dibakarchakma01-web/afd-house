@@ -29,7 +29,7 @@ import { useAdmin } from './contexts/AdminContext';
 
 export default function App() {
   const { user, isAdmin, loginAdmin } = useAuth();
-  const { products, setProducts, categories, setCategories, subcategories, setSubcategories, brands, setBrands, orders, setOrders, coupons, setCoupons, reviews, setReviews } = useAdmin();
+  const { products, setProducts, categories, setCategories, subcategories, setSubcategories, brands, setBrands, orders, setOrders, coupons, setCoupons, reviews, setReviews, loading: adminLoading } = useAdmin();
 
   // Navigation active view states: 'home' | 'detail' | 'cart' | 'checkout' | 'tracking' | 'profile' | 'admin' | 'auth'
   const [view, setView] = useState<string>('home');
@@ -179,7 +179,7 @@ export default function App() {
       console.error('Failed to clear session storage:', e);
     }
 
-    if (products.length === 0) return;
+    if (adminLoading || products.length === 0) return;
 
     // Prune Cartesian local guest cart state
     const cleanCart = cart.filter(item => products.some(p => p.id === item.product.id));
@@ -227,7 +227,7 @@ export default function App() {
     if (cleanWish.length !== wishlistIds.length) {
       setWishlistIds(cleanWish);
     }
-  }, [products, user]);
+  }, [products, user, adminLoading]);
 
   // Helper effect to merge guest cart into Firestore when logging in
   useEffect(() => {
