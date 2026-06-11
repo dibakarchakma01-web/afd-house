@@ -23,6 +23,7 @@ import CustomerDashboard from './views/CustomerDashboard';
 import AdminDashboardView from './views/AdminDashboardView';
 import AuthView from './views/AuthView';
 import ProductListingView from './views/ProductListingView';
+import PoliciesView from './views/PoliciesView';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuth } from './contexts/AuthContext';
 import { useAdmin } from './contexts/AdminContext';
@@ -795,6 +796,13 @@ export default function App() {
           <AuthView
             onSuccess={handleAuthSuccess}
             onBack={() => setView('home')}
+          />
+        )}
+
+        {['privacy', 'terms', 'refund', 'shipping'].includes(view) && (
+          <PoliciesView
+            initialTab={view as any}
+            onBackToShop={() => setView('home')}
           />
         )}
       </main>

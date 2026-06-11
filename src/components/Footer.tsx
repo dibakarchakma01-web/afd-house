@@ -76,11 +76,11 @@ export default function Footer({ setView, categories, setActiveCategory }: Foote
           <div className="flex flex-col gap-5">
             <h3 className="text-gray-900 font-black text-[13px] uppercase tracking-widest">Customer Care</h3>
             <ul className="flex flex-col gap-3.5 text-xs font-bold">
-              <li><button onClick={() => setView?.('tracking')} className="hover:text-brand-green text-left">Track Order</button></li>
-              <li><button className="hover:text-brand-green text-left">Help Center</button></li>
-              <li><button className="hover:text-brand-green text-left">Return Policy</button></li>
-              <li><button className="hover:text-brand-green text-left">Terms & Conditions</button></li>
-              <li><button className="hover:text-brand-green text-left">Privacy Policy</button></li>
+              <li><button onClick={() => { setView?.('tracking'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-brand-green text-left">Track Order</button></li>
+              <li><button onClick={() => { setView?.('shipping'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-brand-green text-left">Shipping Policy</button></li>
+              <li><button onClick={() => { setView?.('refund'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-brand-green text-left">Return & Refund Policy</button></li>
+              <li><button onClick={() => { setView?.('terms'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-brand-green text-left">Terms & Conditions</button></li>
+              <li><button onClick={() => { setView?.('privacy'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-brand-green text-left">Privacy Policy</button></li>
             </ul>
           </div>
 
