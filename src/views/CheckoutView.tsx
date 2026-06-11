@@ -143,6 +143,8 @@ export default function CheckoutView({
   const [otpValue, setOtpValue] = useState('');
   const [pinValue, setPinValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
+  const [placedOrderEmail, setPlacedOrderEmail] = useState<string | null>(null);
 
   // Stripe Card States
   const [cardNumber, setCardNumber] = useState('');
@@ -318,11 +320,13 @@ export default function CheckoutView({
       // Email configuration is temporarily disabled for now. Saving strictly to Firestore instead.
       console.log(`[Firestore Success] Order "${newOrder.id}" saved to Firebase Firestore. Admin notification skipped.`);
 
+      setPlacedOrderId(newOrder.id);
+      setPlacedOrderEmail(newOrder.customerEmail);
       setSimulatorStep('success');
       setTimeout(() => {
-        onOrderComplete(newOrder);
         setPaymentPortalOpen(false);
-      }, 2000);
+        onOrderComplete(newOrder);
+      }, 4000); // 4 seconds delay to see the tracking ID and auto invoice email message
 
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'orders');
@@ -1250,16 +1254,24 @@ async function createStripePaymentIntent(orderId, bdtAmount) {
               
               {/* Common Success / Processing States */}
               {simulatorStep === 'success' ? (
-                <div className="py-6 text-center space-y-3.5 animate-scaleUp">
+                <div className="py-6 text-center space-y-4 animate-scaleUp">
                   <div className="mx-auto w-12 h-12 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 rounded-full flex items-center justify-center animate-bounce">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
-                  <div className="space-y-1">
-                    <h3 className="text-base font-bold text-gray-900 dark:text-white">Payment Received Successfully!</h3>
-                    <p className="text-xs text-gray-400 font-mono">TrxID: TXN{Math.floor(1000000 + Math.random() * 9000000)}</p>
+                  <div className="space-y-1.5">
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white">Order Placed Successfully!</h3>
+                    <div className="inline-block bg-white dark:bg-slate-800 border-2 border-emerald-500/20 px-4 py-2 rounded-xl mt-2">
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Your Tracking ID</p>
+                      <p className="text-lg text-emerald-600 dark:text-emerald-400 font-black font-mono tracking-wider">{placedOrderId}</p>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">
-                    Handing back controller to Merchant site... Proceeding to Order Receipt.
+                  <div className="bg-orange-50/50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400 p-3 rounded-xl border border-orange-100/50 dark:border-orange-900/30">
+                    <p className="text-xs font-medium">
+                      An automated digital invoice has been instantly sent to <strong>{placedOrderEmail}</strong>.
+                    </p>
+                  </div>
+                  <p className="text-[11px] text-gray-400 animate-pulse pt-2">
+                    Redirecting to live order tracking board...
                   </p>
                 </div>
               ) : isSubmitting ? (

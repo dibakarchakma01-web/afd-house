@@ -84,6 +84,7 @@ export default function App() {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [isComparisonOpen, setIsComparisonOpen] = useState(false);
+  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
 
   // Shopping active states
   const [searchQuery, setSearchQuery] = useState('');
@@ -766,13 +767,14 @@ export default function App() {
               setCart([]);
               setAppliedCoupon(null);
               setCouponCode('');
+              setTrackingOrderId(order.id);
               setView('tracking');
             }}
           />
         )}
 
         {view === 'tracking' && (
-          <OrderTrackingView user={user} />
+          <OrderTrackingView user={user} initialTrackingId={trackingOrderId} />
         )}
 
         {view === 'profile' && user && (

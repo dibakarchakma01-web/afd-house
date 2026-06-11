@@ -1,50 +1,79 @@
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Package, Truck, CheckCircle2, ChevronRight, AlertTriangle, Printer, Clock, Settings } from 'lucide-react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, onSnapshot, doc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Order } from '../types';
 
 interface OrderTrackingViewProps {
   user: any;
+  initialTrackingId?: string | null;
 }
 
-export default function OrderTrackingView({ user }: OrderTrackingViewProps) {
+export default function OrderTrackingView({ user, initialTrackingId }: OrderTrackingViewProps) {
   const [typedId, setTypedId] = useState('');
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
   const [myOrders, setMyOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Prefetch client orders for easy clicking
+  // Auto-fill initialTrackingId
+  useEffect(() => {
+    if (initialTrackingId) {
+      setTypedId(initialTrackingId);
+      // We will let the following effect or handleTrackSubmit fetch the real tracking
+      fetchOrderById(initialTrackingId);
+    }
+  }, [initialTrackingId]);
+
+  // Real-time listener for activeOrder
+  useEffect(() => {
+    if (!activeOrder?.id) return;
+
+    const unsubscribe = onSnapshot(
+      doc(db, 'orders', activeOrder.id),
+      (docSnap) => {
+        if (docSnap.exists()) {
+          setActiveOrder(docSnap.data() as Order);
+        }
+      },
+      (err) => {
+        console.error("Order real time update failed:", err);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [activeOrder?.id]);
+
+  // Prefetch client orders for easy clicking (real-time)
   useEffect(() => {
     if (!user) return;
-    const fetchOrders = async () => {
-      try {
-        const q = query(collection(db, 'orders'), where('userId', '==', user.uid));
-        const snap = await getDocs(q);
+    
+    const q = query(collection(db, 'orders'), where('userId', '==', user.uid));
+    const unsubscribe = onSnapshot(
+      q,
+      (snap) => {
         const list: Order[] = [];
         snap.forEach((doc) => {
           list.push(doc.data() as Order);
         });
         setMyOrders(list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
-      } catch (e) {
-        handleFirestoreError(e, OperationType.LIST, 'orders');
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.LIST, 'orders');
       }
-    };
-    fetchOrders();
+    );
+
+    return () => unsubscribe();
   }, [user]);
 
-  const handleTrackSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!typedId.trim()) return;
-
+  const fetchOrderById = async (idToFetch: string) => {
     setIsLoading(true);
     setErrorStatus(null);
     try {
-      const q = query(collection(db, 'orders'), where('id', '==', typedId.trim()));
+      const q = query(collection(db, 'orders'), where('id', '==', idToFetch.trim()));
       const snap = await getDocs(q);
       if (snap.empty) {
-        setErrorStatus(`We couldn't trace any order matching "${typedId}". Verify formatting.`);
+        setErrorStatus(`We couldn't trace any order matching "${idToFetch}". Verify formatting.`);
         setActiveOrder(null);
       } else {
         let matched: Order | null = null;
@@ -54,11 +83,17 @@ export default function OrderTrackingView({ user }: OrderTrackingViewProps) {
         setActiveOrder(matched);
       }
     } catch (err) {
-      handleFirestoreError(err, OperationType.GET, `orders/${typedId}`);
+      handleFirestoreError(err, OperationType.GET, `orders/${idToFetch}`);
       setErrorStatus('Error fetching order metadata. Try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleTrackSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!typedId.trim()) return;
+    fetchOrderById(typedId);
   };
 
   const handleCardClick = (order: Order) => {
