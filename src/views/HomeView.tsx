@@ -178,6 +178,48 @@ export default function HomeView({
                </div>
              ))}
           </div>
+
+          {/* Brand Introduction Section in Bangla */}
+          <div className="bg-gradient-to-br from-white to-emerald-50/20 dark:from-zinc-950 dark:to-emerald-950/10 rounded-[2rem] p-6 sm:p-10 border border-emerald-100/60 dark:border-zinc-800/80 shadow-xs mt-12 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-7 space-y-4 sm:space-y-5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-brand-green bg-brand-green/10">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>আমাদের পরিচিতি — AFD House</span>
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black text-gray-950 dark:text-white leading-tight tracking-tight">
+                আপনার বিশ্বস্ত এবং নির্ভরযোগ্য <span className="text-brand-green">অনলাইন পার্টনার</span>
+              </h2>
+              <p className="text-sm sm:text-base text-gray-750 dark:text-zinc-300 leading-relaxed font-medium">
+                AFD House বাংলাদেশের একটি প্রিমিয়ার অনলাইন মার্কেটপ্লেস, যেখানে আমরা উচ্চমানের পোশাক, ইলেকট্রনিক্স এবং শিশুদের খেলনা সহ বিভিন্ন প্রয়োজনীয় পণ্য সরাসরি গ্রাহকের দোরগোড়ায় পৌঁছে দিই। পাশাপাশি, আমরা চীন থেকে সরাসরি আমদানিকৃত মানসম্মত পণ্য পাইকারি দামে সরবরাহ করি, যা ব্যবসায়ীদের জন্য সহজ, নির্ভরযোগ্য এবং লাভজনক সমাধান নিশ্চিত করে।
+              </p>
+            </div>
+            <div className="lg:col-span-5 bg-emerald-50/40 dark:bg-zinc-900/40 p-5 sm:p-6 rounded-2xl border border-emerald-100/50 dark:border-zinc-800/80 space-y-4 flex flex-col justify-center">
+              <h3 className="text-xs font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest pl-1">
+                কেন আমরা সেরা?
+              </h3>
+              <div className="space-y-3.5">
+                {[
+                  { title: "সরাসরি চীন থেকে আমদানিকৃত", desc: "কোনো মধ্যস্বত্বভোগী ছাড়া সরাসরি গুণগত মানসম্পন্ন চায়না পণ্য।" },
+                  { title: "খুচরা ও পাইকারি মার্কেট", desc: "ব্যবসার সম্প্রসারণে খুচরা ক্রেতা ও পাইকারদের প্রথম পছন্দ।" },
+                  { title: "নিরাপদ ও দ্রুত ক্যাশ অন ডেলিভারি", desc: "সমগ্র বাংলাদেশ জুড়ে নিশ্চিন্তে ও নিরাপদে হোম ডেলিভারি সুবিধা।" }
+                ].map((item, idx) => (
+                  <div key={idx} className="flex gap-3 items-start group">
+                    <div className="w-5 h-5 rounded-full bg-brand-green/10 text-brand-green flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5 group-hover:scale-110 transition-transform">
+                      ✓
+                    </div>
+                    <div>
+                      <span className="block text-xs font-black text-gray-900 dark:text-white leading-none mb-1">
+                        {item.title}
+                      </span>
+                      <span className="block text-[11px] text-gray-500 dark:text-zinc-400 leading-normal font-semibold font-sans">
+                        {item.desc}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
       )}
 

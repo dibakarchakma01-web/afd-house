@@ -33,8 +33,8 @@ export default function Footer({ setView, categories, setActiveCategory }: Foote
               <Logo size="md" />
               <span className="font-black text-gray-900 text-2xl tracking-tighter">AFD <span className="text-brand-green">HOUSE</span></span>
             </div>
-            <p className="text-xs leading-relaxed text-black font-semibold">
-              AFD HOUSE is Bangladesh’s premier online marketplace. We curate high-utility clothing designs, electronic items, and children’s toys directly to your doorstep.
+            <p className="text-[13px] leading-relaxed text-gray-750 font-bold font-sans">
+              AFD House বাংলাদেশের একটি প্রিমিয়ার অনলাইন মার্কেটপ্লেস, যেখানে আমরা উচ্চমানের পোশাক, ইলেকট্রনিক্স এবং শিশুদের খেলনা সহ বিভিন্ন প্রয়োজনীয় পণ্য সরাসরি গ্রাহকের দোরগোড়ায় পৌঁছে দিই। পাশাপাশি, আমরা চীন থেকে সরাসরি আমদানিকৃত মানসম্মত পণ্য পাইকারি দামে সরবরাহ করি, যা ব্যবসায়ীদের জন্য সহজ, নির্ভরযোগ্য এবং লাভজনক সমাধান নিশ্চিত করে।
             </p>
             
             {/* Social media connections */}
