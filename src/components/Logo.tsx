@@ -38,7 +38,7 @@ export const Logo: React.FC<LogoProps> = ({ className = '', size = 'md' }) => {
       className={`rounded-full border border-gray-200/60 overflow-hidden shadow-sm flex items-center justify-center bg-white shrink-0 ${selectedSizeClass} ${className}`}
     >
       <img
-        src="/logo.png?v=6"
+        src="/logo.png"
         alt="AFD House Logo"
         onError={() => setImageError(true)}
         className="w-full h-full object-cover"
