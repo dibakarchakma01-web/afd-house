@@ -454,10 +454,9 @@ export default function Navbar({
           <nav className="flex items-center gap-6 h-full font-black text-[11.5px] uppercase tracking-wide text-black dark:text-white pb-0.5">
              {[
                { view: 'home', label: 'Home' },
-               { slug: 'mens-fashion', label: "Men's Fashion" },
-               { slug: 'womens-fashion', label: "Women's Fashion" },
-               { slug: 'kids-zone', label: 'Kids Zone' },
-               { slug: 'electronics-gadgets', label: 'Electronics & Gadgets' },
+               { slug: 'mens-fashion', label: "Men fashion" },
+               { slug: 'womens-fashion', label: "Women fashion" },
+               { slug: 'baby-care-products', label: "Baby care products" },
                { view: 'contact', label: 'Contact' }
              ].map((link, idx) => {
                const isActive = link.view ? currentView === link.view : activeCategory === link.slug;

@@ -2,42 +2,55 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { productService } from '../services/productService';
 import { orderService } from '../services/orderService';
 import { Product, Order, Category, SubCategory, Coupon, Review, Brand } from '../types';
-import { collection, onSnapshot, getDocs, writeBatch, doc } from 'firebase/firestore';
+import { collection, onSnapshot, getDocs, writeBatch, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { INITIAL_CATEGORIES, INITIAL_SUBCATEGORIES, INITIAL_PRODUCTS, INITIAL_COUPONS, INITIAL_REVIEWS, INITIAL_BRANDS } from '../data';
 import { useAuth } from './AuthContext.tsx';
 
 export const getProductWithSubcategory = (p: Product): Product => {
+  let category = p.category;
   let subcategory = p.subcategory || '';
-  if (!subcategory) {
-    const nameLower = p.name.toLowerCase();
-    if (nameLower.includes('headphone') || nameLower.includes('earbud')) {
-      subcategory = 'headphones';
-    } else if (nameLower.includes('watch') || nameLower.includes('band')) {
-      subcategory = 'smart-watches';
-    } else if (nameLower.includes('suit') || nameLower.includes('blazer')) {
-      subcategory = 'suits-blazers';
-    } else if (nameLower.includes('denim') || nameLower.includes('jacket')) {
-      subcategory = 'denim-jackets';
-    } else if (nameLower.includes('t-shirt') || nameLower.includes('tee')) {
-      subcategory = 't-shirts';
-    } else if (nameLower.includes('polo')) {
-      subcategory = 'polo-shirts';
-    } else if (nameLower.includes('saree') || nameLower.includes('sari')) {
-      subcategory = 'saree';
-    } else if (nameLower.includes('top') || nameLower.includes('kurti')) {
-      subcategory = 'tops-kurtis';
-    } else if (nameLower.includes('toy') || nameLower.includes('game')) {
-      subcategory = 'toys';
-    } else if (nameLower.includes('bedsheet') || nameLower.includes('pillow')) {
-      subcategory = 'bedsheets';
-    } else if (nameLower.includes('gym') || nameLower.includes('dumbell')) {
-      subcategory = 'gym';
-    } else if (nameLower.includes('perfume') || nameLower.includes('scent')) {
-      subcategory = 'perfumes';
+
+  // Map old/other categories to the new three ones
+  if (category === 'kids-zone' || category === 'baby' || category === 'kids' || category === 'baby-care-products') {
+    category = 'baby-care-products';
+  } else if (category === 'womens-fashion' || category === 'women') {
+    category = 'womens-fashion';
+  } else {
+    category = 'mens-fashion';
+  }
+
+  // Assign appropriate subcategories based on name
+  const nameLower = p.name.toLowerCase();
+  if (category === 'mens-fashion') {
+    if (nameLower.includes('chest') || nameLower.includes('crossbody')) {
+      subcategory = 'chest-bag';
+    } else if (nameLower.includes('travel') || nameLower.includes('backpack') || nameLower.includes('messenger') || nameLower.includes('bag')) {
+      subcategory = 'travel-bag';
+    } else if (nameLower.includes('wallet') || nameLower.includes('money') || nameLower.includes('card')) {
+      subcategory = 'money-bag';
+    } else {
+      subcategory = 'jacket';
+    }
+  } else if (category === 'womens-fashion') {
+    if (nameLower.includes('side') || nameLower.includes('clutch') || nameLower.includes('tote')) {
+      subcategory = 'side-bag';
+    } else if (nameLower.includes('bag') || nameLower.includes('purse') || nameLower.includes('clutch')) {
+      subcategory = 'pas-bag';
+    } else {
+      subcategory = 'jewellery';
+    }
+  } else if (category === 'baby-care-products') {
+    if (nameLower.includes('shoe') || nameLower.includes('sneaker') || nameLower.includes('footwear')) {
+      subcategory = 'shoes';
+    } else if (nameLower.includes('jacket') || nameLower.includes('parka') || nameLower.includes('hoodie')) {
+      subcategory = 'sweater-jackets';
+    } else {
+      subcategory = 'sweater';
     }
   }
-  return { ...p, subcategory };
+
+  return { ...p, category, subcategory };
 };
 
 interface AdminContextType {
@@ -97,6 +110,54 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const seedDatabase = async () => {
     try {
       console.log('AdminContext: Checking catalog status...');
+
+      // Check if database was already marked as seeded or initialized
+      const seedStateSnap = await getDoc(doc(db, 'settings', 'seed_state'));
+      if (seedStateSnap.exists() && seedStateSnap.data()?.seeded) {
+        console.log('AdminContext: Database has already been initialized/seeded. Skipping seed.');
+        return;
+      }
+
+      // Automatic category upgrade/migration if old collections exist
+      const catSnap = await getDocs(collection(db, 'categories'));
+      const hasOldCategories = catSnap.docs.some(d => {
+        const data = d.data();
+        return data.slug === 'electronics-gadgets' || data.slug === 'home-living' || d.id === '4';
+      });
+
+      if (hasOldCategories) {
+        console.log('AdminContext: Upgrading existing categories and subcategories in Firestore...');
+        const batch = writeBatch(db);
+
+        // Delete all old categories
+        catSnap.docs.forEach(d => {
+          batch.delete(d.ref);
+        });
+
+        // Delete all old subcategories
+        const subSnap = await getDocs(collection(db, 'subcategories'));
+        subSnap.docs.forEach(d => {
+          batch.delete(d.ref);
+        });
+
+        // Seed clean new categories and subcategories
+        INITIAL_CATEGORIES.forEach(c => batch.set(doc(db, 'categories', c.id), c, { merge: true }));
+        INITIAL_SUBCATEGORIES.forEach(sc => batch.set(doc(db, 'subcategories', sc.id), sc, { merge: true }));
+
+        // Also normalize any existing products to fit the new category slugs perfectly
+        const prodSnap = await getDocs(collection(db, 'products'));
+        if (!prodSnap.empty) {
+          prodSnap.docs.forEach(d => {
+            const p = d.data() as Product;
+            const updatedProduct = getProductWithSubcategory(p);
+            batch.set(d.ref, updatedProduct, { merge: true });
+          });
+        }
+
+        await batch.commit();
+        console.log('AdminContext: Database categories and subcategories upgraded successfully!');
+      }
+
       const prodSnap = await getDocs(collection(db, 'products'));
       // Only seed if database is completely empty
       if (prodSnap.empty) {
@@ -150,6 +211,9 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           }, { merge: true });
         }
         
+        // Save seed state document
+        batch.set(doc(db, 'settings', 'seed_state'), { seeded: true });
+
         await batch.commit();
         console.log('AdminContext: Data seeding completed successfully.');
       }

@@ -41,7 +41,7 @@ import {
   LogOut,
   Search
 } from 'lucide-react';
-import { collection, query, getDocs, doc, setDoc, deleteDoc, updateDoc, onSnapshot, addDoc, getDoc } from 'firebase/firestore';
+import { collection, query, getDocs, doc, setDoc, deleteDoc, updateDoc, onSnapshot, addDoc, getDoc, writeBatch } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Product, Category, Order, Coupon, Review, ChatThread, ChatMessage, Notification, Brand, WebsiteSettings } from '../types';
 import { useAdmin } from '../contexts/AdminContext';
@@ -442,6 +442,41 @@ export default function AdminDashboardView({ onBackToShop, onLogout }: AdminDash
       setProducts(previousProducts);
       handleFirestoreError(err, OperationType.DELETE, `products/${idToDelete}`);
       showToast('Error permanently deleting product!', 'error');
+    }
+  };
+
+  const handleDeleteAllProducts = async () => {
+    if (!confirm('🚨 CRITICAL WARNING:\nAre you sure you want to delete ALL products from your store catalogue? This action is absolutely irreversible.')) {
+      return;
+    }
+
+    try {
+      showToast('Clearing all catalog products...', 'success');
+      
+      // Fetch all product documents
+      const prodSnap = await getDocs(collection(db, 'products'));
+      if (prodSnap.empty) {
+        showToast('No products found to delete!', 'success');
+        return;
+      }
+
+      const batch = writeBatch(db);
+      prodSnap.docs.forEach((docRef) => {
+        batch.delete(docRef.ref);
+      });
+
+      // Secure the seed state so they are not auto-seeded back
+      batch.set(doc(db, 'settings', 'seed_state'), { seeded: true });
+
+      await batch.commit();
+
+      // UI updates
+      setProducts([]);
+      showToast('All products deleted successfully!', 'success');
+    } catch (err) {
+      console.error('Failed to delete all products:', err);
+      handleFirestoreError(err, OperationType.DELETE, 'products/all');
+      showToast('Error deleting all products!', 'error');
     }
   };
 
@@ -1656,7 +1691,19 @@ export default function AdminDashboardView({ onBackToShop, onLogout }: AdminDash
 
           {/* TABLE DISPLAY CATALOG GRID LIST WITH ALERTS AND METAS */}
           <div className="lg:col-span-2 space-y-4">
-            <h3 className="text-sm font-extrabold text-gray-905 dark:text-white uppercase tracking-wider">Catalog Inventory List ({products.length})</h3>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <h3 className="text-sm font-extrabold text-gray-905 dark:text-white uppercase tracking-wider">Catalog Inventory List ({products.length})</h3>
+              {products.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleDeleteAllProducts}
+                  className="px-3 py-1.5 bg-red-650 hover:bg-red-755 text-white rounded-xl text-[11px] font-extrabold tracking-wide transition flex items-center justify-center gap-1.2 shadow-sm shadow-red-650/15 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>DELETE ALL PRODUCTS</span>
+                </button>
+              )}
+            </div>
 
             <div className="border border-gray-155 dark:border-slate-850 rounded-2.5xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm overflow-x-auto select-none">
               <table className="w-full text-xs text-left divide-y divide-gray-105 dark:divide-slate-800">
