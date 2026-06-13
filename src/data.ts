@@ -1,26 +1,26 @@
 import { Product, Category, SubCategory, Coupon, Review, Brand } from './types';
 
 export const INITIAL_SUBCATEGORIES: SubCategory[] = [
-  // Men's Fashion
+  // Men fashion
   { id: 'sub-m-1', categoryId: 'mens-fashion', name: "Chest Bag", slug: 'chest-bag' },
   { id: 'sub-m-2', categoryId: 'mens-fashion', name: "Travel Bag", slug: 'travel-bag' },
   { id: 'sub-m-3', categoryId: 'mens-fashion', name: "Money Bag", slug: 'money-bag' },
   { id: 'sub-m-4', categoryId: 'mens-fashion', name: "Jacket", slug: 'jacket' },
 
-  // Women's Fashion
+  // Women Fashion
   { id: 'sub-w-1', categoryId: 'womens-fashion', name: "Side Bag", slug: 'side-bag' },
   { id: 'sub-w-2', categoryId: 'womens-fashion', name: "Pas bag", slug: 'pas-bag' },
   { id: 'sub-w-3', categoryId: 'womens-fashion', name: "Jewellery", slug: 'jewellery' },
+  { id: 'sub-w-4', categoryId: 'womens-fashion', name: "Sweater- jackets", slug: 'sweater-jackets' },
 
   // Baby care products
   { id: 'sub-b-1', categoryId: 'baby-care-products', name: "Shoes", slug: 'shoes' },
-  { id: 'sub-b-2', categoryId: 'baby-care-products', name: "Sweater", slug: 'sweater' },
-  { id: 'sub-b-3', categoryId: 'baby-care-products', name: "Sweater- jackets", slug: 'sweater-jackets' }
+  { id: 'sub-b-2', categoryId: 'baby-care-products', name: "Sweater", slug: 'sweater' }
 ];
 
 export const INITIAL_CATEGORIES: Category[] = [
   { id: '1', name: "Men fashion", slug: 'mens-fashion', image: 'https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?auto=format&fit=crop&q=80&w=400' },
-  { id: '2', name: "Women fashion", slug: 'womens-fashion', image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80&w=400' },
+  { id: '2', name: "Women Fashion", slug: 'womens-fashion', image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&q=80&w=400' },
   { id: '3', name: "Baby care products", slug: 'baby-care-products', image: 'https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&q=80&w=400' }
 ];
 
@@ -35,6 +35,49 @@ export const INITIAL_BRANDS: Brand[] = [
 ];
 
 export const INITIAL_PRODUCTS: Product[] = [
+  {
+    id: 'p_chest_bag_premium',
+    name: 'প্রিমিয়াম স্টাইলিশ চেস্ট ব্যাগ (Chest Bag) | ট্রেন্ডি স্লিং ব্যাগ ফর মেন ও ওমেন | ৩ কালার (Brown, Black, Blue)',
+    slug: 'premium-stylish-chest-bag-sling-bag',
+    description: `স্টাইলের সাথে স্মার্টনেস একসাথে পেতে চান? তাহলে এই প্রিমিয়াম চেস্ট ব্যাগ আপনার জন্য পারফেক্ট চয়েস! আধুনিক ডিজাইন এবং কমফোর্টেবল ইউজের কারণে এটি আপনার দৈনন্দিন লাইফস্টাইলকে আরও সহজ ও স্টাইলিশ করে তুলবে।
+
+এই ব্যাগটি মোবাইল, ওয়ালেট, চাবি, পাওয়ার ব্যাংকসহ প্রয়োজনীয় ছোট জিনিসপত্র সহজে বহন করার জন্য ডিজাইন করা হয়েছে। ভ্রমণ, ক্যাজুয়াল আউটিং বা বাইক রাইড—সব ক্ষেত্রেই এটি দেবে একটি ট্রেন্ডি লুক ও সুবিধা।
+
+✨ ফিচারসমূহ:
+- প্রিমিয়াম কোয়ালিটি ও টেকসই ম্যাটেরিয়াল
+- স্টাইলিশ ও কমফোর্টেবল ডিজাইন
+- দৈনন্দিন ব্যবহার, ট্রাভেল ও বাইক রাইডের জন্য উপযুক্ত
+- হালকা ও সহজে বহনযোগ্য
+- ৩টি আকর্ষণীয় রঙে উপলব্ধ: ব্রাউন, ব্ল্যাক, ব্লু
+
+⚡ সীমিত স্টক উপলব্ধ! দ্রুত অর্ডার করুন এবং নিজের পছন্দের রঙটি নিশ্চিত করুন।
+
+🚚 সারাদেশে হোম ডেলিভারি
+💵 ক্যাশ অন ডেলিভারি সুবিধা`,
+    shortDescription: 'প্রিমিয়াম কোয়ালিটির ৩ কালার স্টাইলিশ চেস্ট ব্যাগ',
+    price: 1500,
+    salePrice: 1050,
+    discountPrice: 1050,
+    stock: 88,
+    category: 'mens-fashion',
+    brand: 'Biaoqibolo',
+    sku: 'BG-SL-CHEST-99',
+    images: [
+      '/images/chest_bag_brown.jpg',
+      '/images/chest_bag_black.jpg',
+      '/images/chest_bag_blue.jpg'
+    ],
+    thumbnail: '/images/chest_bag_brown.jpg',
+    rating: 4.9,
+    reviewsCount: 15,
+    tags: ['chest-bag', 'slate-bag', 'mens-fashion', 'trending'],
+    status: 'active',
+    isFeatured: true,
+    isNewArrival: true,
+    isBestSeller: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
   {
     id: 'p1',
     name: 'Zuno Pro Wireless Headphones',

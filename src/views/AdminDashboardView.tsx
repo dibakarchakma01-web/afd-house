@@ -49,6 +49,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { AnalyticsDashboard } from '../components/Admin/AnalyticsDashboard';
 import { Logo } from '../components/Logo';
 import { generateInvoiceHtml } from '../utils/invoiceGenerator';
+import { storageService } from '../services/storageService';
 
 interface AdminDashboardViewProps {
   onBackToShop?: () => void;
@@ -1586,20 +1587,71 @@ export default function AdminDashboardView({ onBackToShop, onLogout }: AdminDash
                 </div>
               </div>
 
-              {/* Image URL */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block flex items-center gap-0.5">
-                  <Image className="w-3.5 h-3.5" />
-                  <span>Main Image snapshot URL</span>
-                </label>
-                <input
-                  type="url"
-                  required
-                  placeholder="https://images.unsplash.com/photo-..."
-                  value={productForm.imageURL}
-                  onChange={(e) => setProductForm({ ...productForm, imageURL: e.target.value })}
-                  className="w-full text-xs px-3 py-2.5 rounded-xl border border-gray-205 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono"
-                />
+              {/* Image URL and Direct File Upload */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block flex items-center gap-1">
+                    <Image className="w-3.5 h-3.5" />
+                    <span>Product Photo / Image URL</span>
+                  </label>
+                  <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold font-mono">Firebase Storage Support</span>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div>
+                    <input
+                      type="url"
+                      required
+                      placeholder="Or enter image URL..."
+                      value={productForm.imageURL}
+                      onChange={(e) => setProductForm({ ...productForm, imageURL: e.target.value })}
+                      className="w-full text-xs px-3 py-2.5 rounded-xl border border-gray-205 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-indigo-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 rounded-xl bg-indigo-50/20 dark:bg-slate-800/40 cursor-pointer text-xs font-bold text-indigo-600 dark:text-indigo-400 transition text-center min-h-[38px]">
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Upload Local Photo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            showToast('Uploading image to Firebase Storage...', 'success');
+                            const uploadId = isEditingProduct ? (productForm.id || 'p_temp') : `p_temp_${Date.now()}`;
+                            const downloadURL = await storageService.uploadProductImage(uploadId, file);
+                            setProductForm({ ...productForm, imageURL: downloadURL });
+                            showToast('Photo uploaded successfully!', 'success');
+                          } catch (err: any) {
+                            console.error('Image upload failed:', err);
+                            showToast('Failed to upload: ' + (err.message || err), 'error');
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {productForm.imageURL && (
+                  <div className="relative w-20 h-20 rounded-xl overflow-hidden border border-gray-150 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 mt-1 shadow-sm shrink-0 flex items-center justify-center">
+                    <img 
+                      src={productForm.imageURL} 
+                      alt="Preview" 
+                      className="max-w-full max-h-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setProductForm({ ...productForm, imageURL: '' })}
+                      className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white rounded-full p-0.5 shadow cursor-pointer transition"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Keywords / Indexing tags */}

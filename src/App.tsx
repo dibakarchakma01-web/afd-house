@@ -81,6 +81,60 @@ export default function App() {
       }
     }
   }, [loginAdmin, isAdmin]);
+
+  // Support custom hash URL to instantly trigger bulk product delete from anywhere
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleHashChange = async () => {
+      const hash = window.location.hash;
+      if (hash === '#delete-all-products' || hash === '#clear-all-products') {
+        const confirmDelete = window.confirm(
+          '🚨 ক্রিশিয়াল অ্যালার্ট!\n\nআপনি কি আসলেই স্টোরের সব প্রোডাক্ট (All Products) ডিলিট করতে চান?\n\nএটি করলে ডাটাবেজ থেকে সব পণ্য একবারে মুছে যাবে এবং নতুন করে অটো-সিড হবে না।'
+        );
+        if (!confirmDelete) {
+          window.location.hash = '';
+          return;
+        }
+
+        try {
+          console.log('App: Deleting all products from Firestore...');
+          const prodSnap = await getDocs(collection(db, 'products'));
+          if (prodSnap.empty) {
+            alert('ডাটাবেজে কোনো প্রোডাক্ট পাওয়া যায়নি!');
+            window.location.hash = '';
+            return;
+          }
+
+          const batch = writeBatch(db);
+          prodSnap.docs.forEach((docRef) => {
+            batch.delete(docRef.ref);
+          });
+
+          // Set state to prevent auto-seeding
+          batch.set(doc(db, 'settings', 'seed_state'), { seeded: true });
+
+          await batch.commit();
+          setProducts([]);
+          alert('সব প্রোডাক্ট সফলভাবে ডিলিট করা হয়েছে!');
+        } catch (err: any) {
+          console.error('Failed to run batch delete:', err);
+          alert('প্রোডাক্ট ডিলিট করতে ল্যাগ বা সমস্যা হয়েছে: ' + err.message);
+        } finally {
+          window.location.hash = '';
+        }
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    // Execute on initial run too if hash matches
+    handleHashChange();
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [setProducts]);
+
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [isComparisonOpen, setIsComparisonOpen] = useState(false);

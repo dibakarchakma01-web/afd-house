@@ -8,45 +8,42 @@ import { INITIAL_CATEGORIES, INITIAL_SUBCATEGORIES, INITIAL_PRODUCTS, INITIAL_CO
 import { useAuth } from './AuthContext.tsx';
 
 export const getProductWithSubcategory = (p: Product): Product => {
-  let category = p.category;
+  let category = p.category || 'mens-fashion';
   let subcategory = p.subcategory || '';
 
-  // Map old/other categories to the new three ones
-  if (category === 'kids-zone' || category === 'baby' || category === 'kids' || category === 'baby-care-products') {
+  // Backward compatibility: map legacy category names to new ones if necessary
+  if (category === 'baby' || category === 'kids' || category === 'kids-zone' || category === 'baby-care-products') {
     category = 'baby-care-products';
-  } else if (category === 'womens-fashion' || category === 'women') {
+  } else if (category === 'women' || category === 'womens-fashion') {
     category = 'womens-fashion';
-  } else {
+  } else if (category === 'men' || category === 'mens-fashion') {
+    category = 'mens-fashion';
+  }
+
+  // Ensure category is one of our 3 valid options. Defaulting to 'mens-fashion' if unknown.
+  const validSlugs = ['mens-fashion', 'womens-fashion', 'baby-care-products'];
+  if (!validSlugs.includes(category)) {
     category = 'mens-fashion';
   }
 
   // Assign appropriate subcategories based on name
-  const nameLower = p.name.toLowerCase();
-  if (category === 'mens-fashion') {
-    if (nameLower.includes('chest') || nameLower.includes('crossbody')) {
-      subcategory = 'chest-bag';
-    } else if (nameLower.includes('travel') || nameLower.includes('backpack') || nameLower.includes('messenger') || nameLower.includes('bag')) {
-      subcategory = 'travel-bag';
-    } else if (nameLower.includes('wallet') || nameLower.includes('money') || nameLower.includes('card')) {
-      subcategory = 'money-bag';
+  if (!subcategory || subcategory === 'all') {
+    const nameLower = p.name.toLowerCase();
+    if (category === 'mens-fashion') {
+      if (nameLower.includes('chest') || nameLower.includes('crossbody')) subcategory = 'chest-bag';
+      else if (nameLower.includes('wallet') || nameLower.includes('money')) subcategory = 'money-bag';
+      else if (nameLower.includes('travel') || nameLower.includes('pack')) subcategory = 'travel-bag';
+      else subcategory = 'jacket';
+    } else if (category === 'womens-fashion') {
+      if (nameLower.includes('side') || nameLower.includes('shoulder')) subcategory = 'side-bag';
+      else if (nameLower.includes('jewel') || nameLower.includes('ring') || nameLower.includes('earring')) subcategory = 'jewellery';
+      else if (nameLower.includes('sweater') || nameLower.includes('jacket') || nameLower.includes('coat')) subcategory = 'sweater-jackets';
+      else subcategory = 'pas-bag';
+    } else if (category === 'baby-care-products') {
+      if (nameLower.includes('shoe') || nameLower.includes('sneaker') || nameLower.includes('footwear')) subcategory = 'shoes';
+      else subcategory = 'sweater';
     } else {
-      subcategory = 'jacket';
-    }
-  } else if (category === 'womens-fashion') {
-    if (nameLower.includes('side') || nameLower.includes('clutch') || nameLower.includes('tote')) {
-      subcategory = 'side-bag';
-    } else if (nameLower.includes('bag') || nameLower.includes('purse') || nameLower.includes('clutch')) {
-      subcategory = 'pas-bag';
-    } else {
-      subcategory = 'jewellery';
-    }
-  } else if (category === 'baby-care-products') {
-    if (nameLower.includes('shoe') || nameLower.includes('sneaker') || nameLower.includes('footwear')) {
-      subcategory = 'shoes';
-    } else if (nameLower.includes('jacket') || nameLower.includes('parka') || nameLower.includes('hoodie')) {
-      subcategory = 'sweater-jackets';
-    } else {
-      subcategory = 'sweater';
+      subcategory = 'all';
     }
   }
 
@@ -111,26 +108,34 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       console.log('AdminContext: Checking catalog status...');
 
-      // Check if database was already marked as seeded or initialized
+      const catCheckSnap = await getDocs(collection(db, 'categories'));
+      const needsCategoryMigration = catCheckSnap.empty || catCheckSnap.size !== INITIAL_CATEGORIES.length;
+      const chestBagDoc = await getDoc(doc(db, 'products', 'p_chest_bag_premium'));
+
+      // Check if database was already marked as seeded and has the correct category configuration
       const seedStateSnap = await getDoc(doc(db, 'settings', 'seed_state'));
-      if (seedStateSnap.exists() && seedStateSnap.data()?.seeded) {
-        console.log('AdminContext: Database has already been initialized/seeded. Skipping seed.');
+      if (seedStateSnap.exists() && seedStateSnap.data()?.seeded && !needsCategoryMigration) {
+        console.log('AdminContext: Database has already been initialized/seeded with correct custom categories. Checking for chest bag...');
+        if (!chestBagDoc.exists()) {
+          console.log('AdminContext: p_chest_bag_premium is missing. Guaranteeing chest bag exists...');
+          const found = INITIAL_PRODUCTS.find(p => p.id === 'p_chest_bag_premium');
+          if (found) {
+            const batch = writeBatch(db);
+            batch.set(doc(db, 'products', found.id), getProductWithSubcategory(found), { merge: true });
+            await batch.commit();
+            console.log('AdminContext: p_chest_bag_premium successfully seeded.');
+          }
+        }
         return;
       }
 
-      // Automatic category upgrade/migration if old collections exist
-      const catSnap = await getDocs(collection(db, 'categories'));
-      const hasOldCategories = catSnap.docs.some(d => {
-        const data = d.data();
-        return data.slug === 'electronics-gadgets' || data.slug === 'home-living' || d.id === '4';
-      });
-
-      if (hasOldCategories) {
-        console.log('AdminContext: Upgrading existing categories and subcategories in Firestore...');
+      // If categories mismatch or are missing, perform a clean migration to restore the custom 3 categories
+      if (needsCategoryMigration && !catCheckSnap.empty) {
+        console.log('AdminContext: Restoring and upgrading custom 3 categories and subcategories in Firestore...');
         const batch = writeBatch(db);
 
-        // Delete all old categories
-        catSnap.docs.forEach(d => {
+        // Delete all old categories to avoid ID collision and ensure correct names/images
+        catCheckSnap.docs.forEach(d => {
           batch.delete(d.ref);
         });
 
@@ -140,11 +145,11 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           batch.delete(d.ref);
         });
 
-        // Seed clean new categories and subcategories
+        // Seed clean restored categories and subcategories
         INITIAL_CATEGORIES.forEach(c => batch.set(doc(db, 'categories', c.id), c, { merge: true }));
         INITIAL_SUBCATEGORIES.forEach(sc => batch.set(doc(db, 'subcategories', sc.id), sc, { merge: true }));
 
-        // Also normalize any existing products to fit the new category slugs perfectly
+        // Correctly normalize any existing products to fit the 3 categories perfectly
         const prodSnap = await getDocs(collection(db, 'products'));
         if (!prodSnap.empty) {
           prodSnap.docs.forEach(d => {
@@ -154,8 +159,12 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           });
         }
 
+        // Restored seeded settings
+        batch.set(doc(db, 'settings', 'seed_state'), { seeded: true });
+
         await batch.commit();
-        console.log('AdminContext: Database categories and subcategories upgraded successfully!');
+        console.log('AdminContext: Database categories fully restored to the 3 custom category schema and products re-classified!');
+        return;
       }
 
       const prodSnap = await getDocs(collection(db, 'products'));
@@ -164,7 +173,7 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         console.log('AdminContext: Catalog empty. Seeding initial data...');
         const batch = writeBatch(db);
         
-        // Use a consistent seeding strategy
+        // Use our consistent, full-collection seeding strategy
         INITIAL_CATEGORIES.forEach(c => batch.set(doc(db, 'categories', c.id), c, { merge: true }));
         INITIAL_SUBCATEGORIES.forEach(sc => batch.set(doc(db, 'subcategories', sc.id), sc, { merge: true }));
         INITIAL_BRANDS.forEach(b => batch.set(doc(db, 'brands', b.id), b, { merge: true }));

@@ -1,16 +1,10 @@
 import { 
-  getStorage, 
   ref, 
   uploadBytes, 
   getDownloadURL,
   deleteObject
 } from 'firebase/storage';
-import { initializeApp } from 'firebase/app';
-import firebaseConfig from '../../firebase-applet-config.json';
-
-// Initialize storage separately to catch potential config errors
-const app = initializeApp(firebaseConfig);
-const storage = getStorage(app);
+import { storage } from '../firebase';
 
 export const storageService = {
   // Upload any file
