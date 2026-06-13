@@ -144,6 +144,7 @@ export default function CheckoutView({
   const [pinValue, setPinValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
+  const [placedTrackingNumber, setPlacedTrackingNumber] = useState<string | null>(null);
   const [placedOrderEmail, setPlacedOrderEmail] = useState<string | null>(null);
 
   // Stripe Card States
@@ -270,15 +271,20 @@ export default function CheckoutView({
         image: item.product.images[0],
       }));
 
-      const randomOrderId = 'ZM-' + Math.floor(100000 + Math.random() * 900000);
+      const randomOrderId = `AFD-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+      const generatedTrackingNumber = `TRK-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+      const generatedInvoiceNumber = `INV-${Math.floor(100000 + Math.random() * 900000)}`;
 
-      const computedShippingAddress = `${address}, Upazila: ${upazila}, District: ${district}. Phone: ${phoneNumber}`;
+      const computedShippingAddress = `${address}, Upazila: ${upazila}, District: ${district}`;
 
       const newOrder: Order = {
         id: randomOrderId,
         userId: user?.uid || 'guest-session',
         customerName: name,
         customerEmail: email || 'guest@example.com',
+        customerPhone: phoneNumber,
+        trackingNumber: generatedTrackingNumber,
+        invoiceNumber: generatedInvoiceNumber,
         products: purchasedProducts,
         total: subtotal,
         discount: discountValue,
@@ -321,6 +327,7 @@ export default function CheckoutView({
       console.log(`[Firestore Success] Order "${newOrder.id}" saved to Firebase Firestore. Admin notification skipped.`);
 
       setPlacedOrderId(newOrder.id);
+      setPlacedTrackingNumber(newOrder.trackingNumber || null);
       setPlacedOrderEmail(newOrder.customerEmail);
       setSimulatorStep('success');
       setTimeout(() => {
@@ -1260,9 +1267,15 @@ async function createStripePaymentIntent(orderId, bdtAmount) {
                   </div>
                   <div className="space-y-1.5">
                     <h3 className="text-base font-bold text-gray-900 dark:text-white">Order Placed Successfully!</h3>
-                    <div className="inline-block bg-white dark:bg-slate-800 border-2 border-emerald-500/20 px-4 py-2 rounded-xl mt-2">
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Your Tracking ID</p>
-                      <p className="text-lg text-emerald-600 dark:text-emerald-400 font-black font-mono tracking-wider">{placedOrderId}</p>
+                    <div className="flex flex-col gap-2 mt-3 items-center">
+                      <div className="w-full inline-flex flex-col bg-white dark:bg-slate-800 border-2 border-emerald-500/20 px-4 py-2 rounded-xl text-center">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Order ID</p>
+                        <p className="text-[15px] text-gray-900 dark:text-gray-200 font-black font-mono tracking-wider">{placedOrderId}</p>
+                      </div>
+                      <div className="w-full inline-flex flex-col bg-emerald-50 dark:bg-emerald-900/10 border-2 border-emerald-500/20 px-4 py-2 rounded-xl text-center">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-0.5">Secret Tracking Number</p>
+                        <p className="text-lg text-emerald-600 dark:text-emerald-400 font-black font-mono tracking-wider">{placedTrackingNumber}</p>
+                      </div>
                     </div>
                   </div>
                   <div className="bg-orange-50/50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400 p-3 rounded-xl border border-orange-100/50 dark:border-orange-900/30">

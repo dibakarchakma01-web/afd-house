@@ -103,6 +103,9 @@ export interface Order {
   userId: string;
   customerName: string;
   customerEmail: string;
+  customerPhone?: string;
+  trackingNumber?: string;
+  invoiceNumber?: string;
   products: OrderProduct[];
   total: number;
   discount: number;
@@ -110,7 +113,7 @@ export interface Order {
   couponCode?: string;
   paymentMethod: 'bKash' | 'Nagad' | 'SSLCommerz' | 'Stripe' | 'COD';
   paymentStatus: 'Paid' | 'Pending' | 'Failed';
-  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+  status: 'Pending' | 'Processing' | 'Packed' | 'Shipped' | 'Out For Delivery' | 'Delivered' | 'Cancelled';
   shippingAddress: string;
   deliveryNotes?: string;
   createdAt: string;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, ShieldCheck, Truck, RefreshCw, CreditCard, Facebook, Instagram, Twitter, Youtube, ShoppingCart } from 'lucide-react';
+import { Mail, Phone, MapPin, ShieldCheck, Truck, RefreshCw, CreditCard, Facebook, Instagram, Twitter, Youtube, ShoppingCart, MessageCircle } from 'lucide-react';
 import { Logo } from './Logo';
 
 interface FooterProps {
@@ -94,7 +94,18 @@ export default function Footer({ setView, categories, setActiveCategory }: Foote
               </div>
               <div className="flex items-center gap-3">
                 <Phone className="w-4 h-4 text-brand-green shrink-0" />
-                <span>+8801533770313</span>
+                <span>+8801575445600</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <MessageCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                <a 
+                  href="https://wa.me/8801575445600?text=Assalamu%20Alaikum%20AFD%20House,%20I'm%20interested%20in%20your%2520products." 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-brand-green transition-all"
+                >
+                  WhatsApp Support
+                </a>
               </div>
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-brand-green shrink-0" />

@@ -22,8 +22,9 @@ const databaseId = rawDatabaseId && rawDatabaseId !== '(default)' ? rawDatabaseI
 
 export const db = initializeFirestore(app, {
   experimentalForceLongPolling: true,
+  useFetchStreams: false,
   ignoreUndefinedProperties: true,
-}, databaseId);
+} as any, databaseId);
 
 export const auth = getAuth();
 export const storage = getStorage(app);

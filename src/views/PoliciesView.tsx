@@ -83,7 +83,7 @@ export default function PoliciesView({ initialTab = 'privacy', onBackToShop }: P
           <div className="bg-gray-50 dark:bg-zinc-900/40 p-4 rounded-2xl border border-gray-150/60 dark:border-zinc-800/50 text-center">
             <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500">Need immediate help?</p>
             <p className="text-[11px] font-black text-gray-750 dark:text-gray-300 mt-1">Contact Support Team</p>
-            <p className="text-xs font-black text-brand-green mt-1">+8801533770313</p>
+            <p className="text-xs font-black text-brand-green mt-1">+8801575445600</p>
           </div>
         </div>
 

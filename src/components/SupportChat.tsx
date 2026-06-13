@@ -181,7 +181,7 @@ export default function SupportChat({ user, onLoginRequest }: SupportChatProps) 
                 ⚡ Recommended Faster Contact:
               </span>
               <a
-                href="https://wa.me/8801533770313?text=Assalamu%20Alaikum%20AFD%20House,%20I'm%20interested%20in%20your%20products."
+                href="https://wa.me/8801575445600?text=Assalamu%20Alaikum%20AFD%20House,%20I'm%20interested%20in%20your%20products."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-between gap-3 bg-[#25D366] hover:bg-[#20ba5a] text-white font-extrabold px-4 py-3 rounded-2xl transition-all shadow-md group border border-[#1ebd53] hover:scale-[1.01] duration-150"

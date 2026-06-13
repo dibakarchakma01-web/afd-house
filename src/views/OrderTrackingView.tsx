@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Package, Truck, CheckCircle2, ChevronRight, AlertTriangle, Printer, Clock, Settings } from 'lucide-react';
-import { collection, query, where, getDocs, onSnapshot, doc } from 'firebase/firestore';
+import { doc, getDocs, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Order } from '../types';
+import { generateInvoiceHtml } from '../utils/invoiceGenerator';
 
 interface OrderTrackingViewProps {
   user: any;
@@ -70,10 +71,18 @@ export default function OrderTrackingView({ user, initialTrackingId }: OrderTrac
     setIsLoading(true);
     setErrorStatus(null);
     try {
-      const q = query(collection(db, 'orders'), where('id', '==', idToFetch.trim()));
-      const snap = await getDocs(q);
+      // First try matching ID
+      let q = query(collection(db, 'orders'), where('id', '==', idToFetch.trim()));
+      let snap = await getDocs(q);
+      
+      // If not matching ID, try matching Tracking Number
       if (snap.empty) {
-        setErrorStatus(`We couldn't trace any order matching "${idToFetch}". Verify formatting.`);
+        q = query(collection(db, 'orders'), where('trackingNumber', '==', idToFetch.trim().toUpperCase()));
+        snap = await getDocs(q);
+      }
+
+      if (snap.empty) {
+        setErrorStatus(`We couldn't trace any order matching "${idToFetch}". Verify format (AFD-XXXX... or TRK-XXXX...).`);
         setActiveOrder(null);
       } else {
         let matched: Order | null = null;
@@ -102,93 +111,30 @@ export default function OrderTrackingView({ user, initialTrackingId }: OrderTrac
     setErrorStatus(null);
   };
 
+  const handleDownloadReceipt = (order: Order) => {
+    const htmlContent = generateInvoiceHtml(order);
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `AFD-Invoice-${order.invoiceNumber || order.id}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const handlePrintInvoice = (order: Order) => {
-    // Simple print implementation
+    const htmlContent = generateInvoiceHtml(order);
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>AFD HOUSE Invoice - ${order.id}</title>
-            <style>
-              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; line-height: 1.6; }
-              .header { display: flex; justify-content: space-between; border-bottom: 2px solid #6366f1; padding-bottom: 20px; }
-              .header h1 { color: #6366f1; margin: 0; }
-              .details { margin-top: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-              .details-box h3 { border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-              th { text-align: left; padding: 12px; border-bottom: 2px solid #eee; background: #f9fafb; }
-              td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
-              .total-section { text-align: right; margin-top: 30px; border-top: 2px solid #6366f1; padding-top: 20px; }
-              .total-row { display: flex; justify-content: flex-end; gap: 40px; margin-bottom: 5px; }
-              .footer { margin-top: 50px; text-align: center; font-size: 0.8em; color: #666; border-top: 1px solid #eee; padding-top: 20px; }
-              @media print { .no-print { display: none; } }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>AFD HOUSE</h1>
-              <div style="text-align: right">
-                <p><strong>Order ID:</strong> ${order.id}</p>
-                <p><strong>Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
-                <p><strong>Payment:</strong> ${order.paymentMethod} (${order.paymentStatus})</p>
-              </div>
-            </div>
-            <div class="details">
-              <div class="details-box">
-                <h3>Billed To:</h3>
-                <p><strong>${order.customerName}</strong></p>
-                <p>${order.customerEmail}</p>
-              </div>
-              <div class="details-box">
-                <h3>Shipping Address:</h3>
-                <p>${order.shippingAddress}</p>
-                 ${order.deliveryNotes ? `<p><strong>Notes:</strong> ${order.deliveryNotes}</p>` : ''}
-              </div>
-            </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Product Specification</th>
-                  <th>Unit Price</th>
-                  <th style="text-align: center">Qty</th>
-                  <th style="text-align: right">Amount Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${order.products.map(p => `
-                  <tr>
-                    <td>${p.name}</td>
-                    <td>৳${p.price.toLocaleString()}</td>
-                    <td style="text-align: center">${p.quantity}</td>
-                    <td style="text-align: right">৳${(p.price * p.quantity).toLocaleString()}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-            <div class="total-section">
-              <div class="total-row"><span>Subtotal:</span> <strong>৳${order.total.toLocaleString()}</strong></div>
-              <div class="total-row"><span>Discount Applied:</span> <strong>৳${order.discount.toLocaleString()}</strong></div>
-              <div class="total-row" style="font-size: 1.3em; color: #6366f1; margin-top: 10px;">
-                <span>Payable Amount:</span> <strong>৳${order.finalTotal.toLocaleString()}</strong>
-              </div>
-            </div>
-            <div class="footer">
-              <p>Thank you for choosing AFD HOUSE - Your Professional E-commerce Partner</p>
-              <p>This is a computer-generated invoice. No signature required.</p>
-            </div>
-          </body>
-        </html>
-      `);
+      printWindow.document.write(htmlContent);
       printWindow.document.close();
-      setTimeout(() => {
-         printWindow.print();
-      }, 500);
     }
   };
 
   // Tracker Steps helpers
-  const TRACK_STEPS = ['Pending', 'Processing', 'Shipped', 'Delivered'];
+  const TRACK_STEPS = ['Pending', 'Processing', 'Packed', 'Shipped', 'Out For Delivery', 'Delivered'];
   const getStepIndex = (status: string) => TRACK_STEPS.indexOf(status);
 
   return (
@@ -277,21 +223,34 @@ export default function OrderTrackingView({ user, initialTrackingId }: OrderTrac
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-150 dark:border-slate-800 pb-4">
                 <div>
                   <h3 className="text-base font-extrabold text-gray-900 dark:text-white flex items-center gap-1.5 leading-none">
-                    <span>Invoice Trace ID:</span>
+                    <span>Order:</span>
                     <span className="font-mono text-indigo-600 dark:text-indigo-400 select-all">{activeOrder.id}</span>
                   </h3>
+                  {activeOrder.trackingNumber && (
+                    <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 flex items-center gap-1.5 mt-1">
+                      <span>Tracking:</span>
+                      <span className="font-mono text-emerald-500 select-all">{activeOrder.trackingNumber}</span>
+                    </h3>
+                  )}
                   <p className="text-xs text-gray-400 mt-1">Placed on {new Date(activeOrder.createdAt).toLocaleString()}</p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => handlePrintInvoice(activeOrder)}
-                    className="p-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-indigo-600 rounded-xl transition"
-                    title="Print Receipt"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-[10px] uppercase tracking-wider rounded-xl transition hover:bg-slate-200 dark:hover:bg-slate-700"
                   >
                     <Printer className="w-4 h-4" />
+                    Print
                   </button>
-                  <div className="bg-indigo-600 px-3.5 py-1.5 text-white text-xs font-extrabold tracking-wide uppercase rounded-xl">
+                  <button
+                    onClick={() => handleDownloadReceipt(activeOrder)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-bold text-[10px] uppercase tracking-wider rounded-xl transition hover:bg-indigo-100 dark:hover:bg-indigo-900/60"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    Download PDF
+                  </button>
+                  <div className="bg-indigo-600 px-3.5 py-1.5 text-white text-[10px] font-extrabold tracking-wide uppercase rounded-xl">
                     {activeOrder.paymentMethod} • {activeOrder.paymentStatus.toUpperCase()}
                   </div>
                 </div>

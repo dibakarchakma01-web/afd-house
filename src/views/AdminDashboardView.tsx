@@ -38,7 +38,8 @@ import {
   PieChart,
   ClipboardList,
   Store,
-  LogOut
+  LogOut,
+  Search
 } from 'lucide-react';
 import { collection, query, getDocs, doc, setDoc, deleteDoc, updateDoc, onSnapshot, addDoc, getDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../firebase';
@@ -47,6 +48,7 @@ import { useAdmin } from '../contexts/AdminContext';
 import { useAuth } from '../contexts/AuthContext';
 import { AnalyticsDashboard } from '../components/Admin/AnalyticsDashboard';
 import { Logo } from '../components/Logo';
+import { generateInvoiceHtml } from '../utils/invoiceGenerator';
 
 interface AdminDashboardViewProps {
   onBackToShop?: () => void;
@@ -69,6 +71,7 @@ export default function AdminDashboardView({ onBackToShop, onLogout }: AdminDash
 
   // Navigation tabs state
   const [activeTab, setActiveTab] = useState<'dashboard' | 'analytics' | 'inventory' | 'products' | 'categories' | 'brands' | 'orders' | 'coupons' | 'reviews' | 'chats' | 'customers' | 'carts' | 'settings'>('dashboard');
+  const [orderSearchQuery, setOrderSearchQuery] = useState('');
 
   // Website Settings state
   const [websiteSettings, setWebsiteSettings] = useState<WebsiteSettings | null>(null);
@@ -804,68 +807,27 @@ export default function AdminDashboardView({ onBackToShop, onLogout }: AdminDash
   const handlePrintInvoice = (orderId: string) => {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
-    
-    // Simple print implementation
+    const htmlContent = generateInvoiceHtml(order);
     const printWindow = window.open('', '_blank');
     if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Invoice - ${order.id}</title>
-            <style>
-              body { font-family: sans-serif; padding: 40px; }
-              .header { display: flex; justify-content: space-between; border-bottom: 2px solid #eee; padding-bottom: 20px; }
-              .details { margin-top: 30px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-              th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
-              .total { text-align: right; margin-top: 30px; font-weight: bold; font-size: 1.2em; }
-            </style>
-          </head>
-          <body>
-            <div class="header">
-              <h1>AFD HOUSE</h1>
-              <div>
-                <p>Order ID: ${order.id}</p>
-                <p>Date: ${new Date(order.createdAt).toLocaleDateString()}</p>
-              </div>
-            </div>
-            <div class="details">
-              <h3>Customer Details:</h3>
-              <p>Name: ${order.customerName}</p>
-              <p>Email: ${order.customerEmail}</p>
-              <p>Address: ${order.shippingAddress}</p>
-            </div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Price</th>
-                  <th>Qty</th>
-                  <th>Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${order.products.map(p => `
-                  <tr>
-                    <td>${p.name}</td>
-                    <td>৳${p.price}</td>
-                    <td>${p.quantity}</td>
-                    <td>৳${p.price * p.quantity}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-            <div class="total">
-              <p>Subtotal: ৳${order.total}</p>
-              <p>Discount: ৳${order.discount}</p>
-              <p>Final Total: ৳${order.finalTotal}</p>
-            </div>
-          </body>
-        </html>
-      `);
+      printWindow.document.write(htmlContent);
       printWindow.document.close();
-      printWindow.print();
     }
+  };
+
+  const handleDownloadInvoice = (orderId: string) => {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    const htmlContent = generateInvoiceHtml(order);
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `AFD-Invoice-${order.invoiceNumber || order.id}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // Group active cart records dynamically for monitoring
@@ -2163,7 +2125,19 @@ export default function AdminDashboardView({ onBackToShop, onLogout }: AdminDash
       {/* ---- Tab 4: Orders Transit Control ---- */}
       {activeTab === 'orders' && (
         <div className="space-y-4 animate-fadeIn">
-          <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">Orders Status Dispatch Panel ({orders.length})</h3>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <h3 className="text-sm font-extrabold text-gray-900 dark:text-white uppercase tracking-wider">Orders Status Dispatch Panel ({orders.length})</h3>
+            <div className="relative w-full sm:w-72">
+              <input
+                type="text"
+                placeholder="Search by Tracking ID, Order ID..."
+                value={orderSearchQuery}
+                onChange={(e) => setOrderSearchQuery(e.target.value)}
+                className="w-full text-xs px-3.5 py-2 pl-9 rounded-xl bg-white dark:bg-slate-900 border border-gray-205 dark:border-slate-805 focus:outline-none"
+              />
+              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            </div>
+          </div>
 
           <div className="border border-gray-150 dark:border-slate-855 rounded-2.5xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm overflow-x-auto select-none">
             <table className="w-full text-xs text-left divide-y divide-gray-105 dark:divide-slate-800 border-b border-gray-150">
@@ -2177,10 +2151,17 @@ export default function AdminDashboardView({ onBackToShop, onLogout }: AdminDash
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-slate-850 text-gray-700 dark:text-gray-300 font-medium">
-                {orders.map((ord) => (
+                {orders
+                  .filter(o => 
+                    !orderSearchQuery || 
+                    o.id.toLowerCase().includes(orderSearchQuery.toLowerCase()) || 
+                    (o.trackingNumber && o.trackingNumber.toLowerCase().includes(orderSearchQuery.toLowerCase()))
+                  )
+                  .map((ord) => (
                   <tr key={ord.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-950/20">
                     <td className="p-4">
                       <p className="font-bold text-gray-900 dark:text-white font-mono">{ord.id}</p>
+                      {ord.trackingNumber && <p className="text-[10px] text-indigo-500 mt-0.5 font-bold font-mono tracking-widest">{ord.trackingNumber}</p>}
                       <p className="text-[10px] text-gray-400 mt-1 font-mono">{new Date(ord.createdAt).toLocaleString()}</p>
                     </td>
                     <td className="p-4 max-w-[200px] truncate">
@@ -2211,6 +2192,13 @@ export default function AdminDashboardView({ onBackToShop, onLogout }: AdminDash
                         >
                           <Printer className="w-3.5 h-3.5" />
                         </button>
+                        <button
+                          onClick={() => handleDownloadInvoice(ord.id)}
+                          className="p-2 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 rounded-lg transition"
+                          title="Download Receipt PDF"
+                        >
+                          <Archive className="w-3.5 h-3.5" />
+                        </button>
                         <select
                           value={ord.status}
                           onChange={(e) => handleStatusChange(ord.id, e.target.value as any, ord.userId)}
@@ -2224,7 +2212,9 @@ export default function AdminDashboardView({ onBackToShop, onLogout }: AdminDash
                         >
                           <option value="Pending">Pending</option>
                           <option value="Processing">Processing</option>
+                          <option value="Packed">Packed</option>
                           <option value="Shipped">Shipped</option>
+                          <option value="Out For Delivery">Out For Delivery</option>
                           <option value="Delivered">Delivered</option>
                           <option value="Cancelled">Cancelled</option>
                         </select>
